@@ -276,13 +276,13 @@ export default function App() {
     if (activeChannel === "短剧") {
       list = list.filter((v) => v.category.includes("短剧") || v.vodClass?.includes("短剧"));
     } else if (activeChannel === "电视剧") {
-      list = list.filter((v) => v.category.includes("电视剧") || v.vodClass?.includes("电视剧"));
+      list = list.filter((v) => (v.category.includes("电视剧") || v.vodClass?.includes("电视剧")) && !v.vodClass?.includes("动漫"));
     } else if (activeChannel === "电影") {
-      list = list.filter((v) => v.category.includes("电影") || v.vodClass?.includes("电影"));
+      list = list.filter((v) => (v.category.includes("电影") || v.vodClass?.includes("电影")) && !v.vodClass?.includes("电视剧"));
     } else if (activeChannel === "综艺") {
       list = list.filter((v) => v.category.includes("综艺") || v.vodClass?.includes("综艺"));
     } else if (activeChannel === "动漫") {
-      list = list.filter((v) => v.category.includes("动漫") || v.vodClass?.includes("动漫"));
+      list = list.filter((v) => v.category.includes("动漫") || v.vodClass?.includes("动漫") || v.vodClass?.includes("动画"));
     } else if (activeChannel === "少儿") {
       list = list.filter((v) => v.category.includes("少儿") || v.vodClass?.includes("少儿"));
     } else if (activeChannel === "直播") {
@@ -297,7 +297,18 @@ export default function App() {
       list = list.filter((v) => v.vodClass?.includes(selectedFilterGenre) || v.subTitle?.includes(selectedFilterGenre));
     }
 
-    return list;
+    // 核心去重：严格按照片名唯一性过滤，彻底杜绝相同剧集在网格中重复渲染
+    const seenTitles = new Set<string>();
+    const deduplicatedList: VideoItem[] = [];
+    for (const item of list) {
+      const cleanKey = item.title.trim();
+      if (!seenTitles.has(cleanKey)) {
+        seenTitles.add(cleanKey);
+        deduplicatedList.push(item);
+      }
+    }
+
+    return deduplicatedList;
   }, [presetVideos, hasSearched, searchResults, activeChannel, selectedFilterCategory, selectedFilterGenre]);
 
   // 排行榜列表数据
@@ -834,8 +845,8 @@ export default function App() {
         {/* TAB 1: 首页长流 (Home) */}
         {activeBottomTab === "home" && (
           <div className="home-content-stream">
-            {/* 焦点推荐大卡片 Hero Banner (16:9 大圆角，带渐变阴影与主视觉) */}
-            {heroVideo && !hasSearched && (
+            {/* 焦点推荐大卡片 Hero Banner (仅在“首页”频道展示，二级分类如动漫、电视剧等顶格呈现双列海报，完全对齐 BagTrim 交互) */}
+            {activeChannel === "首页" && heroVideo && !hasSearched && (
               <div
                 className="hero-banner-card"
                 onClick={() => selectVideo(heroVideo)}
