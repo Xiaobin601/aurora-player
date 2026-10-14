@@ -14,6 +14,8 @@ export interface VideoItem {
   category: string;
   remarks: string;
   pic: string;
+  subTitle?: string;
+  vodClass?: string;
   sources: VideoSource[];
 }
 
