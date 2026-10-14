@@ -26,6 +26,7 @@ import {
   ArrowUpDown,
   Calendar,
   Star,
+  Trash2,
 } from "lucide-react";
 import presetData from "./data/presetLibrary.json";
 import { searchOnlineVideos } from "./services/videoSearch";
@@ -62,7 +63,39 @@ interface WatchHistoryItem {
   episodeName: string;
   episodeUrl: string;
   progressPercent: number;
+  currentTime?: number;
+  duration?: number;
+  sourceIndex?: number;
   timestamp: number;
+}
+
+const STORAGE_KEY_HISTORY = "aurora_watch_history_v1";
+
+function loadInitialWatchHistory(): WatchHistoryItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_HISTORY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter(
+          (item) => item && item.vodName && !item.episodeUrl?.includes("test-streams.mux.dev")
+        );
+      }
+    }
+  } catch (e) {
+    console.warn("加载播放历史异常:", e);
+  }
+  return [];
+}
+
+function formatRelativeTime(timestamp: number): string {
+  const diff = Date.now() - timestamp;
+  if (diff < 60000) return "刚刚";
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+  if (diff < 86400000 * 3) return `${Math.floor(diff / 86400000)}天前`;
+  const d = new Date(timestamp);
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
 // 离线下载项接口
@@ -130,26 +163,16 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState<string>("就绪");
 
   // 观看历史与下载列表
-  const [watchHistory, setWatchHistory] = useState<WatchHistoryItem[]>([
-    {
-      vodId: 149147,
-      vodName: "美人余",
-      vodPic: "https://vcover-vt-pic.puui.qpic.cn/vcover_vt_pic/0/mzc00200xqdobf51787296754730/260",
-      episodeName: "第 03 集",
-      episodeUrl: "https://test-streams.mux.dev/test_001/stream.m3u8",
-      progressPercent: 68,
-      timestamp: Date.now() - 3600000,
-    },
-    {
-      vodId: 148459,
-      vodName: "现在就出发 第四季",
-      vodPic: "https://vcover-vt-pic.puui.qpic.cn/vcover_vt_pic/0/mzc002001bk7moh1788430209093/260",
-      episodeName: "2026-10-13期",
-      episodeUrl: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-      progressPercent: 42,
-      timestamp: Date.now() - 86400000,
-    },
-  ]);
+  const [watchHistory, setWatchHistory] = useState<WatchHistoryItem[]>(loadInitialWatchHistory);
+
+  // 监听观看历史变动并持久化到本地存储
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(watchHistory));
+    } catch (e) {
+      console.warn("持久化播放历史异常:", e);
+    }
+  }, [watchHistory]);
 
   const [downloadList, setDownloadList] = useState<DownloadItem[]>([
     {
@@ -185,6 +208,9 @@ export default function App() {
 
   const selectedVideoRef = useRef<VideoItem | null>(null);
   const currentSourceIndexRef = useRef<number>(0);
+  const currentEpisodeRef = useRef<Episode | null>(null);
+  const pendingSeekTimeRef = useRef<number | null>(null);
+  const lastSavedProgressRef = useRef<number>(0);
   const failoverTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
@@ -194,6 +220,10 @@ export default function App() {
   useEffect(() => {
     currentSourceIndexRef.current = currentSourceIndex;
   }, [currentSourceIndex]);
+
+  useEffect(() => {
+    currentEpisodeRef.current = currentEpisode;
+  }, [currentEpisode]);
 
   // 1. 初始化本地 Tauri 微型 HTTP 代理服务器 (端口探测)
   useEffect(() => {
@@ -377,17 +407,21 @@ export default function App() {
     setCurrentEpisode(firstEp);
     setShowPlayerModal(true);
 
-    // 记录到最近历史
+    // 记录到最近历史 (优先继承之前的历史进度，若无则初始化)
     setWatchHistory((prev) => {
       const filtered = prev.filter((item) => String(item.vodId) !== String(video.id));
+      const existing = prev.find((item) => String(item.vodId) === String(video.id));
       return [
         {
           vodId: video.id,
           vodName: video.title,
           vodPic: video.pic,
-          episodeName: firstEp?.name || "第 01 集",
-          episodeUrl: firstEp?.url || "",
-          progressPercent: 5,
+          episodeName: existing?.episodeName || firstEp?.name || "第 01 集",
+          episodeUrl: existing?.episodeUrl || firstEp?.url || "",
+          progressPercent: existing?.progressPercent || 0,
+          currentTime: existing?.currentTime || 0,
+          duration: existing?.duration || 0,
+          sourceIndex: existing?.sourceIndex || 0,
           timestamp: Date.now(),
         },
         ...filtered,
@@ -419,6 +453,79 @@ export default function App() {
       .catch((err) => {
         console.warn("后台嗅探非关键异常:", err);
       });
+  };
+
+  // 从历史记录精准续播
+  const resumePlayFromHistory = (item: WatchHistoryItem) => {
+    let target = presetVideos.find(
+      (v) => String(v.id) === String(item.vodId) || v.title === item.vodName
+    );
+    if (!target) {
+      target = {
+        id: item.vodId,
+        title: item.vodName,
+        category: "历史播放",
+        remarks: item.episodeName,
+        pic: item.vodPic,
+        sources: [
+          {
+            sourceName: "历史播放源",
+            episodes: [{ name: item.episodeName, url: item.episodeUrl }],
+          },
+        ],
+      };
+    }
+
+    setSelectedVideo(target);
+    setShowHistoryDrawer(false);
+    setShowPlayerModal(true);
+
+    const sIdx =
+      item.sourceIndex !== undefined && item.sourceIndex < target.sources.length
+        ? item.sourceIndex
+        : 0;
+    setCurrentSourceIndex(sIdx);
+    currentSourceIndexRef.current = sIdx;
+
+    const activeSrc = target.sources[sIdx] || target.sources[0];
+    let targetEp =
+      activeSrc?.episodes?.find(
+        (e) => e.url === item.episodeUrl || e.name === item.episodeName
+      ) || activeSrc?.episodes?.[0];
+
+    if (!targetEp) {
+      targetEp = { name: item.episodeName, url: item.episodeUrl };
+    }
+
+    setCurrentEpisode(targetEp);
+
+    // 记录断点续播时间点
+    if (item.currentTime && item.currentTime > 3) {
+      pendingSeekTimeRef.current = item.currentTime;
+      setStatusMessage(
+        `正在续播：${item.vodName} · ${item.episodeName} (恢复至 ${formatTime(item.currentTime)})`
+      );
+    } else {
+      pendingSeekTimeRef.current = null;
+    }
+
+    playEpisode(targetEp, target.title);
+  };
+
+  // 单条删除历史记录
+  const removeHistoryItem = (vodId: string | number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setWatchHistory((prev) => prev.filter((item) => String(item.vodId) !== String(vodId)));
+  };
+
+  // 清空所有历史记录
+  const clearAllHistory = () => {
+    if (window.confirm("确定要清空全部播放历史记录吗？")) {
+      setWatchHistory([]);
+      try {
+        localStorage.removeItem(STORAGE_KEY_HISTORY);
+      } catch {}
+    }
   };
 
   // 监听模态框开启与视频挂载：确保 DOM 出现后第一时间自动起播首集
@@ -478,6 +585,33 @@ export default function App() {
       failoverTimeoutRef.current = null;
     }
     setCurrentEpisode(episode);
+    currentEpisodeRef.current = episode;
+
+    // 同步更新历史记录中的集数与时间戳
+    const curVid = selectedVideoRef.current;
+    if (curVid) {
+      setWatchHistory((prev) => {
+        const filtered = prev.filter((item) => String(item.vodId) !== String(curVid.id));
+        const prevItem = prev.find((item) => String(item.vodId) === String(curVid.id));
+        const isSameEp = prevItem?.episodeUrl === episode.url;
+        return [
+          {
+            vodId: curVid.id,
+            vodName: curVid.title,
+            vodPic: curVid.pic,
+            episodeName: episode.name,
+            episodeUrl: episode.url,
+            progressPercent: isSameEp ? (prevItem?.progressPercent || 0) : 0,
+            currentTime: isSameEp ? prevItem?.currentTime : 0,
+            duration: prevItem?.duration || 0,
+            sourceIndex: currentSourceIndexRef.current,
+            timestamp: Date.now(),
+          },
+          ...filtered,
+        ];
+      });
+    }
+
     if (!videoRef.current) return;
     const video = videoRef.current;
 
@@ -522,6 +656,18 @@ export default function App() {
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setStatusMessage(`正在播放: ${videoTitle} (${episode.name})`);
         video.play().catch(() => {});
+
+        // 恢复断点续播时间点
+        if (pendingSeekTimeRef.current !== null && pendingSeekTimeRef.current > 0) {
+          const seekTo = pendingSeekTimeRef.current;
+          pendingSeekTimeRef.current = null;
+          setTimeout(() => {
+            if (videoRef.current) {
+              videoRef.current.currentTime = seekTo;
+              setStatusMessage(`已续播至上次位置: ${formatTime(seekTo)}`);
+            }
+          }, 250);
+        }
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -551,6 +697,16 @@ export default function App() {
       video.play().catch((err) => {
         console.warn("直接播放需要用户交互唤醒:", err);
       });
+
+      if (pendingSeekTimeRef.current !== null && pendingSeekTimeRef.current > 0) {
+        const seekTo = pendingSeekTimeRef.current;
+        pendingSeekTimeRef.current = null;
+        const handleLoaded = () => {
+          video.currentTime = seekTo;
+          video.removeEventListener("loadedmetadata", handleLoaded);
+        };
+        video.addEventListener("loadedmetadata", handleLoaded);
+      }
     }
   };
 
@@ -573,15 +729,49 @@ export default function App() {
     return list.slice(start, start + EPISODES_PER_PAGE);
   }, [activeRawEpisodes, pageIndex, isReverseOrder]);
 
-  // 播放器状态监听
+  // 播放器状态监听与实时观看历史进度记录
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
-    const handleTimeUpdate = () => setCurrentTime(video.currentTime);
     const handleDurationChange = () => setDuration(video.duration || 0);
+
+    const handleTimeUpdate = () => {
+      const cur = video.currentTime;
+      setCurrentTime(cur);
+
+      // 实时记录观看进度 (每 2 秒节流写入一次历史状态)
+      const now = Date.now();
+      if (now - lastSavedProgressRef.current > 2000 && video.duration > 0) {
+        lastSavedProgressRef.current = now;
+        const dur = video.duration;
+        const percent = Math.min(100, Math.round((cur / dur) * 100));
+        const v = selectedVideoRef.current;
+        const ep = currentEpisodeRef.current;
+        if (v && ep) {
+          setWatchHistory((prev) => {
+            const filtered = prev.filter((item) => String(item.vodId) !== String(v.id));
+            return [
+              {
+                vodId: v.id,
+                vodName: v.title,
+                vodPic: v.pic,
+                episodeName: ep.name,
+                episodeUrl: ep.url,
+                progressPercent: percent,
+                currentTime: cur,
+                duration: dur,
+                sourceIndex: currentSourceIndexRef.current,
+                timestamp: now,
+              },
+              ...filtered,
+            ];
+          });
+        }
+      }
+    };
 
     video.addEventListener("play", handlePlay);
     video.addEventListener("pause", handlePause);
@@ -1843,12 +2033,14 @@ export default function App() {
             <div className="drawer-header">
               <span className="drawer-title">观影历史记录</span>
               <div className="drawer-header-right">
-                <button
-                  className="drawer-text-action"
-                  onClick={() => setWatchHistory([])}
-                >
-                  清空历史
-                </button>
+                {watchHistory.length > 0 && (
+                  <button
+                    className="drawer-text-action"
+                    onClick={clearAllHistory}
+                  >
+                    清空历史
+                  </button>
+                )}
                 <button
                   className="drawer-close-btn"
                   onClick={() => setShowHistoryDrawer(false)}
@@ -1863,33 +2055,63 @@ export default function App() {
                 <div className="empty-drawer-view">
                   <Clock size={36} color="#6b7280" />
                   <span>暂无观看历史记录</span>
+                  <span className="empty-sub-tip">播放视频后将自动在此为您记录追剧进度</span>
                 </div>
               ) : (
                 <div className="history-items-list">
                   {watchHistory.map((item, idx) => (
                     <div
-                      key={idx}
+                      key={`${item.vodId}-${idx}`}
                       className="history-item-row"
-                      onClick={() => {
-                        const target = presetVideos.find((v) => String(v.id) === String(item.vodId));
-                        if (target) {
-                          selectVideo(target);
-                          setShowHistoryDrawer(false);
-                        }
-                      }}
+                      onClick={() => resumePlayFromHistory(item)}
                     >
-                      <img src={item.vodPic} alt={item.vodName} className="history-poster" />
+                      <div className="history-poster-wrap">
+                        <img
+                          src={item.vodPic}
+                          alt={item.vodName}
+                          className="history-poster"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=200&auto=format&fit=crop&q=60";
+                          }}
+                        />
+                        <span className="history-time-tag">
+                          {formatRelativeTime(item.timestamp)}
+                        </span>
+                      </div>
                       <div className="history-details">
                         <div className="history-name">{item.vodName}</div>
                         <div className="history-ep">观看到：{item.episodeName}</div>
+                        <div className="history-meta-sub">
+                          {item.currentTime && item.duration
+                            ? `${formatTime(item.currentTime)} / ${formatTime(item.duration)} · 已看 ${item.progressPercent}%`
+                            : `已看至 ${item.progressPercent}%`}
+                        </div>
                         <div className="history-progress-wrap">
                           <div
                             className="history-progress-bar"
-                            style={{ width: `${item.progressPercent}%` }}
+                            style={{ width: `${Math.max(5, item.progressPercent)}%` }}
                           ></div>
                         </div>
                       </div>
-                      <div className="history-action-pill">续播</div>
+                      <div className="history-item-actions">
+                        <button
+                          className="history-action-pill"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            resumePlayFromHistory(item);
+                          }}
+                        >
+                          续播
+                        </button>
+                        <button
+                          className="history-del-icon-btn"
+                          onClick={(e) => removeHistoryItem(item.vodId, e)}
+                          title="删除记录"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
