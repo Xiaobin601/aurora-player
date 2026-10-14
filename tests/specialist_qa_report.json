@@ -1,0 +1,252 @@
+{
+  "total": 27,
+  "passed": 27,
+  "failed": 0,
+  "passRate": "100.0%",
+  "durationMs": 35270,
+  "results": [
+    {
+      "section": "基础准备",
+      "testItem": "页面成功加载并获得 HTTP 200",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:15.910Z",
+      "details": "HTTP 200, Title: \"极光影院 - Aurora Player\"",
+      "screenshot": ""
+    },
+    {
+      "section": "基础准备",
+      "testItem": "双列瀑布流推荐片库完成挂载",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:16.049Z",
+      "details": "初始加载 160 部视频卡片",
+      "screenshot": ""
+    },
+    {
+      "section": "页面按钮联动性 - 顶部频道",
+      "testItem": "切换至 [电视剧] 频道联动过滤",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:16.485Z",
+      "details": "激活频道: \"电视剧\", 过滤后卡片数: 29 (初始 160)",
+      "screenshot": ""
+    },
+    {
+      "section": "页面按钮联动性 - 顶部频道",
+      "testItem": "切换至 [电影] 频道联动过滤",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:16.913Z",
+      "details": "激活频道: \"电影\", 过滤后卡片数: 25 (初始 160)",
+      "screenshot": ""
+    },
+    {
+      "section": "页面按钮联动性 - 顶部频道",
+      "testItem": "切换至 [综艺] 频道联动过滤",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:17.341Z",
+      "details": "激活频道: \"综艺\", 过滤后卡片数: 23 (初始 160)",
+      "screenshot": ""
+    },
+    {
+      "section": "页面按钮联动性 - 顶部频道",
+      "testItem": "切换至 [动漫] 频道联动过滤",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:17.774Z",
+      "details": "激活频道: \"动漫\", 过滤后卡片数: 22 (初始 160)",
+      "screenshot": ""
+    },
+    {
+      "section": "页面按钮联动性 - 顶部频道",
+      "testItem": "切换至 [少儿] 频道联动过滤",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:18.204Z",
+      "details": "激活频道: \"少儿\", 过滤后卡片数: 20 (初始 160)",
+      "screenshot": ""
+    },
+    {
+      "section": "页面按钮联动性 - 顶部频道",
+      "testItem": "点击顶部 [短剧] 频道自动联动切换到底栏短剧视口",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:18.829Z",
+      "details": "短剧容器渲染: true, 底部短剧Tab激活: true",
+      "screenshot": "01_channel_switch_shorts.png"
+    },
+    {
+      "section": "页面按钮联动性 - 顶部频道",
+      "testItem": "切回 [首页] 频道恢复双列瀑布流推荐片库",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:19.438Z",
+      "details": "主视口恢复首页流: true, 卡片数完全恢复: 160/160",
+      "screenshot": ""
+    },
+    {
+      "section": "页面按钮联动性 - 筛选抽屉",
+      "testItem": "点击搜索框右侧 '| 筛选' 成功弹出全维筛选抽屉",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:19.666Z",
+      "details": "抽屉标题: \"全维影视筛选\"",
+      "screenshot": "02_filter_drawer_open.png"
+    },
+    {
+      "section": "页面按钮联动性 - 筛选抽屉",
+      "testItem": "选择筛选条件（电影 + 喜剧）且应用按钮数字实时联动",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:20.536Z",
+      "details": "选中状态: 电影(true), 喜剧(true), 按钮文字: \"确定应用 (6部)\"",
+      "screenshot": "03_filter_conditions_selected.png"
+    },
+    {
+      "section": "页面按钮联动性 - 筛选抽屉",
+      "testItem": "应用筛选条件后抽屉关闭，列表按条件联动更新",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:21.428Z",
+      "details": "抽屉已关闭: true, 过滤后影片数: 6 (符合预期子集)",
+      "screenshot": "04_filter_applied_grid.png"
+    },
+    {
+      "section": "页面按钮联动性 - 筛选抽屉",
+      "testItem": "点击重置并应用后，列表联动恢复全量推荐",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:22.728Z",
+      "details": "恢复后卡片数: 160/160",
+      "screenshot": ""
+    },
+    {
+      "section": "页面按钮联动性 - 底部Dock",
+      "testItem": "点击底栏 [短剧] Tab 联动切换到对应视口",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:23.366Z",
+      "details": "目标视口 .shorts-immersive-container 挂载: true, 按钮激活态: true",
+      "screenshot": "05_dock_tab_shorts.png"
+    },
+    {
+      "section": "页面按钮联动性 - 底部Dock",
+      "testItem": "点击底栏 [排行榜] Tab 联动切换到对应视口",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:24.022Z",
+      "details": "目标视口 .rank-view-container 挂载: true, 按钮激活态: true",
+      "screenshot": "06_dock_tab_rank.png"
+    },
+    {
+      "section": "页面按钮联动性 - 底部Dock",
+      "testItem": "点击底栏 [我的] Tab 联动切换到对应视口",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:24.602Z",
+      "details": "目标视口 .profile-view-container 挂载: true, 按钮激活态: true",
+      "screenshot": "07_dock_tab_profile.png"
+    },
+    {
+      "section": "页面按钮联动性 - 底部Dock",
+      "testItem": "点击底栏 [首页] Tab 联动切换到对应视口",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:25.244Z",
+      "details": "目标视口 .home-content-stream 挂载: true, 按钮激活态: true",
+      "screenshot": "08_dock_tab_home.png"
+    },
+    {
+      "section": "页面按钮联动性 - 搜索功能",
+      "testItem": "搜索输入 \"美人余\" 并回车，列表联动切换为搜索结果",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:28.503Z",
+      "details": "提示显现: true, 检索结果包含 \"美人余\": true (匹配到 21 部)",
+      "screenshot": "09_search_result_grid.png"
+    },
+    {
+      "section": "页面按钮联动性 - 搜索功能",
+      "testItem": "点击清空按钮后，搜索状态复位并联动恢复推荐列表",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:29.268Z",
+      "details": "输入框清空: \"\", 推荐列表恢复: 160/160",
+      "screenshot": "10_search_reset_grid.png"
+    },
+    {
+      "section": "播放界面结构完整性",
+      "testItem": "播放模态框核心结构组件完整挂载",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:30.447Z",
+      "details": "模态层: true, 视频容器: true, 控制按钮(关闭+全屏): 齐全",
+      "screenshot": "11_player_modal_structure.png"
+    },
+    {
+      "section": "播放界面结构完整性",
+      "testItem": "视频标题、副标题/集数、线路选择器正确渲染",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:30.447Z",
+      "details": "标题: \"现在就出发 第四季\", 状态: \"现在就出发4 / NATURAL HIGH · 正在播放: 现在就出发 第四季 (第 01 集)\", 线路选项: [官方极速源, 光速秒播源, 虎牙备用线], 剧集数: 剧集列表 (3集)",
+      "screenshot": ""
+    },
+    {
+      "section": "播放界面交互",
+      "testItem": "点击正序/倒序按钮，选集网格反转排序且状态文字更新",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:30.983Z",
+      "details": "切换前首项: \"第 01 集\" -> 切换后首项: \"第 03 集\", 按钮状态: \"倒序\"",
+      "screenshot": "12_player_order_toggle.png"
+    },
+    {
+      "section": "播放真实性 - 视频A起播",
+      "testItem": "点击《现在就出发 第四季》，标题与真实流 URL 绝对匹配",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:34.247Z",
+      "details": "标题: \"现在就出发 第四季\", 选集: \"第 01 集\", video.src: \"blob:https://343469ac.aurora-player-4yy.pages...\", 真实流: \"https://343469ac.aurora-player-4yy.pages.dev/stream?url=https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8\" (已捕获 x36xhzz 流: true)",
+      "screenshot": "13_play_video_A_now_departure.png"
+    },
+    {
+      "section": "播放真实性 - 选集切换",
+      "testItem": "点击“第 02 集”，激活态切换且流 URL 联动变更为第 02 集媒体流",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:35.864Z",
+      "details": "激活集: \"第 02 集\", 第2集流URL: \"https://343469ac.aurora-player-4yy.pages.dev/stream?url=https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8\" (含2000341/test特征: true)",
+      "screenshot": "14_play_video_A_ep2_switch.png"
+    },
+    {
+      "section": "播放真实性 - 跨视频切换",
+      "testItem": "关闭视频 A 播放器，模态窗口完全销毁且媒体流销毁",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:36.471Z",
+      "details": "播放窗口已完全卸载: true",
+      "screenshot": ""
+    },
+    {
+      "section": "播放真实性 - 跨视频切换",
+      "testItem": "换片点击《美人余》，标题与流 URL 立即变更为视频 B，严禁残留视频 A 流",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:38.584Z",
+      "details": "换片后标题: \"美人余\", 简介: \"李一桐撕开好命女人糖衣 · 正在播放: 美人余 (第 01 集)\", 视频B真实流: \"https://343469ac.aurora-player-4yy.pages.dev/stream?url=https://test-streams.mux.dev/test_001/stream.m3u8\", 残留检测(Leak): PASS(零残留)",
+      "screenshot": "15_play_video_B_meirenyu.png"
+    },
+    {
+      "section": "播放真实性 - 线路切换",
+      "testItem": "点击“光速秒播源”切换线路，高亮状态更新并触发流重新加载",
+      "passed": true,
+      "status": "PASS",
+      "timestamp": "2026-10-14T16:11:40.217Z",
+      "details": "切换线路: \"光速秒播源\", 触发重载流请求数: 5",
+      "screenshot": "16_play_source_switch.png"
+    }
+  ]
+}

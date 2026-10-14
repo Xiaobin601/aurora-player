@@ -1,0 +1,197 @@
+{
+  "total": 27,
+  "passed": 27,
+  "failed": 0,
+  "totalTime": 20966,
+  "results": [
+    {
+      "category": "资源与加载",
+      "testName": "首页加载与HTTP状态",
+      "passed": true,
+      "durationMs": 4749,
+      "details": "HTTP 200, 标题: \"极光影院 - Aurora Player\""
+    },
+    {
+      "category": "资源与加载",
+      "testName": "React SPA 挂载状态",
+      "passed": true,
+      "durationMs": 4775,
+      "details": "root 节点成功包含子组件"
+    },
+    {
+      "category": "资源与加载",
+      "testName": "页面 JS 异常监听",
+      "passed": true,
+      "durationMs": 0,
+      "details": "无未捕获异常"
+    },
+    {
+      "category": "顶部搜索栏",
+      "testName": "搜索输入框及热搜占位符渲染",
+      "passed": true,
+      "durationMs": 22,
+      "details": "占位符: \"阿凡达\""
+    },
+    {
+      "category": "顶部搜索栏",
+      "testName": "搜索提交与清空按钮显现",
+      "passed": true,
+      "durationMs": 1644,
+      "details": "搜索提示显现: true"
+    },
+    {
+      "category": "顶部搜索栏",
+      "testName": "点击 X 清空搜索框并复位列表",
+      "passed": true,
+      "durationMs": 2219,
+      "details": "输入框内容已恢复为空"
+    },
+    {
+      "category": "筛选抽屉",
+      "testName": "点击'| 筛选'拉起全维筛选抽屉",
+      "passed": true,
+      "durationMs": 38,
+      "details": "抽屉标题: \"全维影视筛选\""
+    },
+    {
+      "category": "筛选抽屉",
+      "testName": "筛选条件重置与应用关闭抽屉",
+      "passed": true,
+      "durationMs": 1573,
+      "details": "抽屉成功关闭并更新推荐视图"
+    },
+    {
+      "category": "离线管理",
+      "testName": "弹出离线管理抽屉与预设离线任务",
+      "passed": true,
+      "durationMs": 84,
+      "details": "存在 2 个缓存项"
+    },
+    {
+      "category": "离线管理",
+      "testName": "删除离线任务",
+      "passed": true,
+      "durationMs": 724,
+      "details": "删除前: 2, 删除后: 1"
+    },
+    {
+      "category": "观看历史",
+      "testName": "弹出观看历史抽屉并展示进度条与续播",
+      "passed": true,
+      "durationMs": 1262,
+      "details": "历史记录数: 2"
+    },
+    {
+      "category": "观看历史",
+      "testName": "清空历史记录",
+      "passed": true,
+      "durationMs": 1847,
+      "details": "空状态提示: \"暂无观看历史记录\""
+    },
+    {
+      "category": "二级频道",
+      "testName": "横滑栏频道切换与视频卡片联动过滤",
+      "passed": true,
+      "durationMs": 2155,
+      "details": "切换流畅，首页显示 240 部影片"
+    },
+    {
+      "category": "首页焦点Banner",
+      "testName": "Hero大图卡片与《九门》渲染",
+      "passed": true,
+      "durationMs": 6,
+      "details": "焦点大图标题: \"九门\""
+    },
+    {
+      "category": "双列视频网格",
+      "testName": "横版海报、右下角状态药丸与主副标题",
+      "passed": true,
+      "durationMs": 124,
+      "details": "样本卡片: [2026-10-13期] 《现在就出发 第四季》- 现在就出发4 / NATURAL HIGH"
+    },
+    {
+      "category": "播放器模态层",
+      "testName": "拉起模态框、视频就绪与剧集网格",
+      "passed": true,
+      "durationMs": 129,
+      "details": "当前开播: 《现在就出发 第四季》, 包含 3 个可见分集"
+    },
+    {
+      "category": "播放器模态层",
+      "testName": "选集正序/倒序切换",
+      "passed": true,
+      "durationMs": 576,
+      "details": "正序首集: \"第 01 集\" -> 倒序首集: \"第 03 集\""
+    },
+    {
+      "category": "播放器模态层",
+      "testName": "线路切换（官方极速/光速秒播/虎牙等）",
+      "passed": true,
+      "durationMs": 1018,
+      "details": "已切换至新线路: \"光速秒播源\""
+    },
+    {
+      "category": "播放器模态层",
+      "testName": "收起播放器模态窗口",
+      "passed": true,
+      "durationMs": 2155,
+      "details": "播放器模态层正常退出并暂停"
+    },
+    {
+      "category": "悬浮胶囊Dock",
+      "testName": "Dock 包含4个专属Tab项",
+      "passed": true,
+      "durationMs": 7,
+      "details": "Tab 数量: 4"
+    },
+    {
+      "category": "悬浮胶囊Dock",
+      "testName": "首页选中态高亮与专属背板类名",
+      "passed": true,
+      "durationMs": 11,
+      "details": "激活样式: dock-nav-item active"
+    },
+    {
+      "category": "短剧沉浸流",
+      "testName": "短剧全屏海报、步进器与右侧互动点赞/选集/分享",
+      "passed": true,
+      "durationMs": 217,
+      "details": "首部短剧: \"兰香如故 · 47集全\", 步进器: \"1 / 26\", 互动按键数: 78"
+    },
+    {
+      "category": "短剧沉浸流",
+      "testName": "短剧切集步进切换 (下一部)",
+      "passed": true,
+      "durationMs": 726,
+      "details": "切集前: 1 / 26 -> 切集后: 2 / 26"
+    },
+    {
+      "category": "排行榜频道",
+      "testName": "热播总榜、Top1/2/3 皇冠徽章与热度分值",
+      "passed": true,
+      "durationMs": 401,
+      "details": "4个分榜就绪, Top 1 皇冠徽章渲染正常, 榜首热度: \"9.9万\""
+    },
+    {
+      "category": "排行榜频道",
+      "testName": "多维榜单Tab(热播/飙升/短剧/新片)流畅切换",
+      "passed": true,
+      "durationMs": 1302,
+      "details": "榜单切换状态响应无时延"
+    },
+    {
+      "category": "个人中心",
+      "testName": "VIP身份卡片、免广告标贴与金刚区统计",
+      "passed": true,
+      "durationMs": 79,
+      "details": "身份: \"至尊VIP会员\" [永久免广告], 金刚区包含 3 个业务模块"
+    },
+    {
+      "category": "个人中心",
+      "testName": "本地代理加速与播放偏好开关交互",
+      "passed": true,
+      "durationMs": 110,
+      "details": "开关状态成功取反: true -> false"
+    }
+  ]
+}

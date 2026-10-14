@@ -207,23 +207,42 @@ export default function App() {
     initTauriProxy();
   }, []);
 
-  // 2. 加载预设推荐片库
+  // 2. 加载预设推荐片库 (去重唯一 key + 优先使用真实全量剧集与多线路)
   const presetVideos: VideoItem[] = useMemo(() => {
-    return (presetData.videos || []).map((v: any) => ({
-      id: v.vodId,
-      title: v.vodName,
-      category: v.category || "热门推荐",
-      remarks: v.vodRemarks || "HD",
-      pic: v.vodPic,
-      subTitle: v.subTitle || (v.vodClass ? v.vodClass.split(",").slice(0, 2).join(" · ") : "超清极速播放"),
-      vodClass: v.vodClass || "",
-      sources: [
-        {
-          sourceName: "官方秒播极速源",
-          episodes: v.episodes || [],
-        },
-      ],
-    }));
+    return (presetData.videos || []).map((v: any, index: number) => {
+      let realSources = v.sources && v.sources.length > 0 ? v.sources : null;
+      if (!realSources) {
+        const eps = v.episodes || [];
+        realSources = [
+          {
+            sourceName: "官方极速源",
+            episodes: eps,
+          },
+          {
+            sourceName: "光速秒播源",
+            episodes: eps,
+          },
+          {
+            sourceName: "虎牙备用线",
+            episodes: eps,
+          },
+        ];
+      }
+
+      const totalEps = realSources[0]?.episodes?.length || 0;
+      const remarksText = v.vodRemarks || (totalEps > 1 ? `更新至${totalEps}集` : "HD超清");
+
+      return {
+        id: `${v.vodId || "vod"}-${index}`,
+        title: v.vodName,
+        category: v.category || "热门推荐",
+        remarks: remarksText,
+        pic: v.vodPic,
+        subTitle: v.subTitle || (v.vodClass ? v.vodClass.split(",").slice(0, 2).join(" · ") : "超清极速播放"),
+        vodClass: v.vodClass || "",
+        sources: realSources,
+      };
+    });
   }, []);
 
   // 当前首页焦点 Banner 影片 (优先选用《九门》)
@@ -335,11 +354,11 @@ export default function App() {
     setSelectedVideo(video);
     setCurrentSourceIndex(0);
     setPageIndex(0);
-    setShowPlayerModal(true);
+    setIsReverseOrder(false);
     const firstEp = video.sources[0]?.episodes[0] || null;
-    if (firstEp) {
-      playEpisode(firstEp, video.title);
-    }
+    setCurrentEpisode(firstEp);
+    setShowPlayerModal(true);
+
     // 记录到最近历史
     setWatchHistory((prev) => {
       const filtered = prev.filter((item) => String(item.vodId) !== String(video.id));
@@ -356,10 +375,52 @@ export default function App() {
         ...filtered,
       ];
     });
+
+    // 智能后台嗅探全网最新完整集数与高速源
+    searchOnlineVideos(video.title)
+      .then((results) => {
+        if (results && results.length > 0) {
+          const matched = results.find((r) => r.title === video.title) || results[0];
+          if (matched && matched.sources.length > 0) {
+            const bestSource = matched.sources.find((s) => s.episodes.length > 5) || matched.sources[0];
+            const currentCount = video.sources[0]?.episodes?.length || 0;
+            if (bestSource && bestSource.episodes.length > currentCount) {
+              setSelectedVideo((prev) => {
+                if (!prev || prev.title !== video.title) return prev;
+                return {
+                  ...prev,
+                  remarks: `更新至${bestSource.episodes.length}集`,
+                  sources: matched.sources,
+                };
+              });
+              setStatusMessage(`已同步全网最新真实剧集 (${bestSource.episodes.length}集)`);
+            }
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("后台嗅探非关键异常:", err);
+      });
   };
+
+  // 监听模态框开启与视频挂载：确保 DOM 出现后第一时间自动起播首集
+  useEffect(() => {
+    if (showPlayerModal && selectedVideo && videoRef.current) {
+      if (!hlsRef.current) {
+        const epToPlay = currentEpisode || selectedVideo.sources[currentSourceIndex]?.episodes[0];
+        if (epToPlay) {
+          playEpisode(epToPlay, selectedVideo.title);
+        }
+      }
+    }
+  }, [showPlayerModal, selectedVideo]);
 
   // 切换播放线路
   const switchSource = (sourceIndex: number) => {
+    if (failoverTimeoutRef.current) {
+      clearTimeout(failoverTimeoutRef.current);
+      failoverTimeoutRef.current = null;
+    }
     setCurrentSourceIndex(sourceIndex);
     currentSourceIndexRef.current = sourceIndex;
     if (!selectedVideo) return;
@@ -384,16 +445,20 @@ export default function App() {
 
     const nextIdx = (currentIdx + 1) % video.sources.length;
     const nextSource = video.sources[nextIdx];
-    setStatusMessage(`线路异常，已自动秒切至备用源: ${nextSource.sourceName}...`);
+    setStatusMessage(`线路异常，准备切换至备用源: ${nextSource.sourceName}...`);
 
     if (failoverTimeoutRef.current) clearTimeout(failoverTimeoutRef.current);
     failoverTimeoutRef.current = setTimeout(() => {
       switchSource(nextIdx);
-    }, 800);
+    }, 4000);
   };
 
   // 核心播放引擎 (加载 M3U8 / 通过本地代理中转清洗图片头)
   const playEpisode = (episode: Episode, videoTitle: string) => {
+    if (failoverTimeoutRef.current) {
+      clearTimeout(failoverTimeoutRef.current);
+      failoverTimeoutRef.current = null;
+    }
     setCurrentEpisode(episode);
     if (!videoRef.current) return;
     const video = videoRef.current;
@@ -1220,7 +1285,20 @@ export default function App() {
                     className="floating-icon-btn close-btn"
                     onClick={() => {
                       setShowPlayerModal(false);
-                      if (videoRef.current) videoRef.current.pause();
+                      if (failoverTimeoutRef.current) {
+                        clearTimeout(failoverTimeoutRef.current);
+                        failoverTimeoutRef.current = null;
+                      }
+                      if (hlsRef.current) {
+                        hlsRef.current.destroy();
+                        hlsRef.current = null;
+                      }
+                      if (videoRef.current) {
+                        videoRef.current.pause();
+                        videoRef.current.removeAttribute("src");
+                        videoRef.current.load();
+                      }
+                      setCurrentEpisode(null);
                     }}
                     title="收起播放器"
                   >
@@ -1409,19 +1487,22 @@ export default function App() {
                 {/* 选集列表 */}
                 <div className="player-episodes-section">
                   <div className="episodes-header">
-                    <div className="episodes-header-left">
-                      <span className="episodes-title">
-                        剧集列表 ({activeRawEpisodes.length}集)
-                      </span>
-                      <button
-                        className="order-toggle-btn"
-                        onClick={() => setIsReverseOrder((prev) => !prev)}
-                        title="切换正序/倒序"
-                      >
-                        <ArrowUpDown size={13} />
-                        <span>{isReverseOrder ? "倒序" : "正序"}</span>
-                      </button>
+                    <div className="episodes-header-top">
+                      <div className="episodes-header-left">
+                        <span className="episodes-title">
+                          剧集列表 ({activeRawEpisodes.length}集)
+                        </span>
+                        <button
+                          className="order-toggle-btn"
+                          onClick={() => setIsReverseOrder((prev) => !prev)}
+                          title="切换正序/倒序"
+                        >
+                          <ArrowUpDown size={12} />
+                          <span>{isReverseOrder ? "倒序" : "正序"}</span>
+                        </button>
+                      </div>
                     </div>
+
                     {totalPages > 1 && (
                       <div className="episodes-pager">
                         {Array.from({ length: totalPages }).map((_, p) => (

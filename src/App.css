@@ -1037,19 +1037,58 @@ body {
 
 .episodes-header {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.episodes-header-top {
+  display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+.episodes-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .episodes-title {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.order-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-lightgray);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.order-toggle-btn:active {
+  background: rgba(255, 255, 255, 0.16);
   color: #fff;
 }
 
 .episodes-pager {
   display: flex;
-  gap: 4px;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.episodes-pager::-webkit-scrollbar {
+  display: none;
 }
 
 .page-num-btn {
