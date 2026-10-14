@@ -65,20 +65,20 @@ async function verifyChannelMoreAndRefresh() {
     const isDifferent = refreshedTitles.some((t, i) => t !== initialTitles[i]);
     console.log(`[PASS] 换一换是否成功轮换为全新批次影片: ${isDifferent}`);
 
-    // 6. 测试【查看全部】
-    console.log("[6] 测试点击【查看全部】展开全量片库...");
+    // 6. 测试【查看全部】升级为原生形态 B 专属影视库
+    console.log("[6] 测试点击【查看全部】推入专属影视库...");
     await page.click(".channel-action-capsule.view-all");
     await new Promise((r) => setTimeout(r, 500));
 
-    const expandedTitles = await page.$$eval(".card-main-title", (els) => els.map((e) => e.textContent.trim()));
-    const viewAllBtnText = await page.$eval(".channel-action-capsule.view-all", (el) => el.textContent.trim());
-    console.log(`[PASS] 展开后全部影片数量: ${expandedTitles.length} 部, 按钮状态变更为: 【${viewAllBtnText}】`);
+    const libraryTitle = await page.$eval(".library-title-text", (el) => el.textContent.trim());
+    const expandedTitles = await page.$$eval(".library-cards-grid .card-main-title", (els) => els.map((e) => e.textContent.trim()));
+    console.log(`[PASS] 成功进入【${libraryTitle}】, 全部影片数量: ${expandedTitles.length} 部`);
 
-    // 再次点击收起
-    await page.click(".channel-action-capsule.view-all");
+    // 点击返回退出分类库
+    await page.click(".library-back-btn");
     await new Promise((r) => setTimeout(r, 500));
     const collapsedTitles = await page.$$eval(".card-main-title", (els) => els.map((e) => e.textContent.trim()));
-    console.log(`[PASS] 点击收起后，恢复精选展示: ${collapsedTitles.length} 部`);
+    console.log(`[PASS] 点击返回后，恢复精选推荐展示: ${collapsedTitles.length} 部`);
 
     // 7. 切换到其他频道 (例如【电影】) 验证通用性
     console.log("[7] 切换到【电影】频道验证通用实现...");

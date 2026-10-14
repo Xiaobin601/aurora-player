@@ -448,6 +448,281 @@ body {
   transition: all 0.2s ease;
 }
 
+/* =========================================================
+   原生形态 B：专属分类影视全量库页面样式 (1:1 复刻电影库等深度视图)
+   ========================================================= */
+.category-library-view {
+  min-height: 100vh;
+  background-color: var(--bg-dark, #0a0b0e);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* 顶部沉浸导航栏 */
+.category-library-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 52px;
+  background: rgba(10, 11, 14, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.library-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 4px 6px 0;
+  transition: opacity 0.2s;
+}
+
+.library-back-btn:hover {
+  opacity: 0.8;
+}
+
+.library-title-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.library-title-text {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.library-badge-pill {
+  font-size: 11px;
+  color: #f5a623;
+  background: rgba(245, 166, 35, 0.15);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.library-search-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.library-search-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* 多维胶囊横滑筛选区域 */
+.category-filter-chips-section {
+  background: rgba(18, 20, 26, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.filter-chips-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 9px;
+}
+
+.filter-chips-row:last-child {
+  margin-bottom: 0;
+}
+
+.filter-row-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 34px;
+  flex-shrink: 0;
+}
+
+.filter-chips-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 2px 2px;
+  scrollbar-width: none;
+}
+
+.filter-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip-pill {
+  padding: 4px 11px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.filter-chip-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.filter-chip-pill.active {
+  background: linear-gradient(135deg, #f5a623 0%, #e08c00 100%);
+  color: #121316;
+  font-weight: 700;
+  border-color: #f5a623;
+  box-shadow: 0 2px 8px rgba(245, 166, 35, 0.35);
+}
+
+/* 结果统计与重置 */
+.library-result-meta-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px 8px;
+}
+
+.result-meta-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.result-meta-text strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.active-filter-tags {
+  color: #f5a623;
+  font-weight: 600;
+}
+
+.library-reset-filter-btn {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 2px 9px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.library-reset-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* 空状态 */
+.library-empty-state {
+  text-align: center;
+  padding: 60px 20px 40px;
+}
+
+.library-empty-state .empty-state-icon {
+  font-size: 42px;
+  margin-bottom: 12px;
+}
+
+.library-empty-state .empty-state-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.library-empty-state .empty-state-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 18px;
+}
+
+.empty-state-reset-btn {
+  padding: 8px 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f5a623 0%, #e08c00 100%);
+  color: #121316;
+  font-weight: 700;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+  transition: transform 0.15s;
+}
+
+.empty-state-reset-btn:active {
+  transform: scale(0.96);
+}
+
+/* 到底提示 */
+.library-bottom-tip {
+  text-align: center;
+  padding: 20px 0 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.5px;
+}
+
+/* 回到顶部浮动按键 */
+.library-back-to-top-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 84px;
+  z-index: 60;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(26, 29, 36, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.library-back-to-top-btn:hover {
+  background: rgba(40, 44, 56, 0.95);
+  transform: translateY(-2px);
+}
+
+.library-back-to-top-btn:active {
+  transform: scale(0.92);
+}
+
 /* 避让底部悬浮 Dock 的高度垫片 */
 .dock-spacer {
   height: 100px;

@@ -29,6 +29,7 @@ import {
   Trash2,
   LayoutGrid,
   RefreshCw,
+  ArrowUp,
 } from "lucide-react";
 import presetData from "./data/presetLibrary.json";
 import { searchOnlineVideos } from "./services/videoSearch";
@@ -56,6 +57,31 @@ const FILTER_GENRES = ["全部", "动作", "喜剧", "科幻", "爱情", "悬疑
 const FILTER_REGIONS = ["全部", "内地", "中国香港", "中国台湾", "欧美", "日韩"];
 const FILTER_YEARS = ["全部", "2026", "2025", "2024", "2023", "2020-2022", "更早"];
 const FILTER_SORTS = ["按热门推荐", "按最新更新", "按评分最高"];
+
+// 原生形态 B：各二级频道专属影视库细分题材胶囊列表
+const CHANNEL_GENRES_MAP: Record<string, string[]> = {
+  "电影": [
+    "全部", "剧情", "动作", "喜剧", "爱情", "科幻", "奇幻", "恐怖", "犯罪", "战争", "冒险", "动画", "院线", "生活", "同性", "情色"
+  ],
+  "电视剧": [
+    "全部", "古装", "都市", "悬疑", "爱情", "武侠", "犯罪", "历史", "年代", "谍战", "奇幻", "喜剧", "剧情"
+  ],
+  "动漫": [
+    "全部", "热血", "玄幻", "修仙", "科幻", "冒险", "搞笑", "恋爱", "古装", "战斗", "机甲", "奇幻"
+  ],
+  "综艺": [
+    "全部", "真人秀", "搞笑", "游戏", "音乐", "文化", "情感", "生活", "访谈", "益智"
+  ],
+  "短剧": [
+    "全部", "逆袭", "甜宠", "都市", "豪门", "重生", "大女主", "战神", "复仇", "古风"
+  ],
+  "少儿": [
+    "全部", "动画", "益智", "亲子", "搞笑", "冒险", "儿歌", "日常"
+  ],
+  "直播": [
+    "全部", "卫视", "地方台", "央视"
+  ],
+};
 
 // 观看历史接口
 interface WatchHistoryItem {
@@ -208,10 +234,25 @@ export default function App() {
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [isCollected, setIsCollected] = useState<boolean>(false);
 
-  // 每个频道的【换一换】批次与【查看全部】展开状态
+  // 每个频道的【换一换】批次
   const [channelPageMap, setChannelPageMap] = useState<Record<string, number>>({});
-  const [channelExpandedMap, setChannelExpandedMap] = useState<Record<string, boolean>>({});
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  // 原生形态 B：专属分类影视全量库页面状态 (1:1 电影库等深度视图)
+  const [activeCategoryLibrary, setActiveCategoryLibrary] = useState<string | null>(null);
+  const [libraryGenre, setLibraryGenre] = useState<string>("全部");
+  const [libraryRegion, setLibraryRegion] = useState<string>("全部");
+  const [libraryYear, setLibraryYear] = useState<string>("全部");
+  const [librarySort, setLibrarySort] = useState<string>("按热门推荐");
+  const [showBackToTop, setShowBackToTop] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleWindowScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, []);
 
   const selectedVideoRef = useRef<VideoItem | null>(null);
   const currentSourceIndexRef = useRef<number>(0);
@@ -372,15 +413,10 @@ export default function App() {
     return currentChannelFullVideos.filter((v) => v.id !== channelBannerVideo.id);
   }, [currentChannelFullVideos, channelBannerVideo]);
 
-  // 当前视口展示的视频列表 (支持换一换每批6部切片与查看全部展开)
+  // 当前视口展示的精选推荐视频列表 (每批6部切片，支持换一换轮替)
   const displayedVideos = useMemo(() => {
     if (hasSearched && searchResults.length > 0) {
       return searchResults;
-    }
-
-    const isExpanded = Boolean(channelExpandedMap[activeChannel]);
-    if (isExpanded) {
-      return gridCandidateVideos;
     }
 
     // 默认展示 6 部 (3 行 2 列，1:1 对齐 BagTrim 真机截图)
@@ -398,7 +434,7 @@ export default function App() {
       return slice.concat(gridCandidateVideos.slice(0, BATCH_SIZE - slice.length));
     }
     return slice;
-  }, [hasSearched, searchResults, gridCandidateVideos, channelExpandedMap, channelPageMap, activeChannel]);
+  }, [hasSearched, searchResults, gridCandidateVideos, channelPageMap, activeChannel]);
 
   // 换一换操作 (带有平滑旋转动画反馈)
   const handleRefreshChannelVideos = () => {
@@ -415,13 +451,120 @@ export default function App() {
     }, 450);
   };
 
-  // 查看全部 / 收起精选切换
-  const handleToggleViewAll = () => {
-    setChannelExpandedMap((prev) => ({
-      ...prev,
-      [activeChannel]: !prev[activeChannel],
-    }));
+  // 原生形态 B：分类影视全量库的数据检索与多维筛选计算
+  const filteredLibraryVideos = useMemo(() => {
+    if (!activeCategoryLibrary) return [];
+
+    let list = presetVideos.filter((v) => {
+      if (activeCategoryLibrary === "电影") {
+        return v.category.includes("电影") || v.vodClass?.includes("电影");
+      } else if (activeCategoryLibrary === "电视剧") {
+        return v.category.includes("电视剧") || v.vodClass?.includes("电视剧");
+      } else if (activeCategoryLibrary === "动漫") {
+        return v.category.includes("动漫") || v.vodClass?.includes("动漫");
+      } else if (activeCategoryLibrary === "综艺") {
+        return v.category.includes("综艺") || v.vodClass?.includes("综艺");
+      } else if (activeCategoryLibrary === "短剧") {
+        return v.category.includes("短剧") || v.vodClass?.includes("短剧");
+      } else if (activeCategoryLibrary === "少儿") {
+        return v.category.includes("少儿") || v.vodClass?.includes("少儿");
+      } else if (activeCategoryLibrary === "直播") {
+        return v.category.includes("直播") || v.vodClass?.includes("直播");
+      }
+      return true;
+    });
+
+    // 唯一去重 (按 id)
+    const seenIds = new Set<string | number>();
+    list = list.filter((v) => {
+      if (seenIds.has(v.id)) return false;
+      seenIds.add(v.id);
+      return true;
+    });
+
+    // 1. 题材筛选
+    if (libraryGenre !== "全部") {
+      list = list.filter(
+        (v) =>
+          v.vodClass?.includes(libraryGenre) ||
+          v.subTitle?.includes(libraryGenre) ||
+          v.category.includes(libraryGenre)
+      );
+    }
+
+    // 2. 地区筛选
+    if (libraryRegion !== "全部") {
+      if (libraryRegion === "内地") {
+        list = list.filter(
+          (v) =>
+            v.vodClass?.includes("内地") ||
+            v.vodClass?.includes("大陆") ||
+            v.vodClass?.includes("国产")
+        );
+      } else {
+        list = list.filter(
+          (v) =>
+            v.vodClass?.includes(libraryRegion) ||
+            v.subTitle?.includes(libraryRegion)
+        );
+      }
+    }
+
+    // 3. 年份筛选
+    if (libraryYear !== "全部") {
+      if (libraryYear === "2020之前") {
+        list = list.filter(
+          (v) =>
+            !v.remarks?.includes("2026") &&
+            !v.remarks?.includes("2025") &&
+            !v.remarks?.includes("2024") &&
+            !v.remarks?.includes("2023") &&
+            !v.remarks?.includes("2022") &&
+            !v.remarks?.includes("2021")
+        );
+      } else {
+        list = list.filter(
+          (v) =>
+            v.remarks?.includes(libraryYear) ||
+            v.vodClass?.includes(libraryYear) ||
+            v.subTitle?.includes(libraryYear)
+        );
+      }
+    }
+
+    // 4. 排序方式
+    if (librarySort === "按最新更新") {
+      list = [...list].reverse();
+    } else if (librarySort === "按评分最高") {
+      list = [...list].sort((a, b) => b.title.localeCompare(a.title));
+    }
+
+    return list;
+  }, [
+    activeCategoryLibrary,
+    presetVideos,
+    libraryGenre,
+    libraryRegion,
+    libraryYear,
+    librarySort,
+  ]);
+
+  // 点击【查看全部】升级为【原生形态 B】：直接推入专属分类影视全量库
+  const handleOpenCategoryLibrary = (channel?: string) => {
+    const targetChannel = channel || activeChannel;
+    setActiveCategoryLibrary(targetChannel);
+    setLibraryGenre("全部");
+    setLibraryRegion("全部");
+    setLibraryYear("全部");
+    setLibrarySort("按热门推荐");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const handleCloseCategoryLibrary = () => {
+    setActiveCategoryLibrary(null);
+  };
+
+
 
   // 排行榜列表数据
   const rankVideos = useMemo(() => {
@@ -1024,202 +1167,396 @@ export default function App() {
   return (
     <div className="bagtrim-app">
       {/* =========================================================
-          1. 顶部状态栏与吸顶操作区 (1:1 复刻截图搜索框与快捷按键)
+          1. 顶部状态栏与吸顶操作区 (当未进入分类库时展示正常头部，进入分类库时展示原生形态 B 沉浸导航)
           ========================================================= */}
-      <header className="bagtrim-header">
-        {/* 左侧：圆角胶囊搜索框 (内置放大镜、占位符与筛选入口) */}
-        <div className="search-capsule-box">
-          <Search size={17} className="search-capsule-icon" />
-          <input
-            type="text"
-            className="search-capsule-input"
-            placeholder={isSearching ? "全网检索中..." : "阿凡达"}
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSearch(searchKeyword);
-              }
+      {!activeCategoryLibrary ? (
+        <>
+          <header className="bagtrim-header">
+            {/* 左侧：圆角胶囊搜索框 (内置放大镜、占位符与筛选入口) */}
+            <div className="search-capsule-box">
+              <Search size={17} className="search-capsule-icon" />
+              <input
+                type="text"
+                className="search-capsule-input"
+                placeholder={isSearching ? "全网检索中..." : "阿凡达"}
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearch(searchKeyword);
+                  }
+                }}
+              />
+              {searchKeyword && (
+                <button
+                  className="capsule-clear-btn"
+                  onClick={() => {
+                    setSearchKeyword("");
+                    setHasSearched(false);
+                    setSearchResults([]);
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+              <span className="search-capsule-divider"></span>
+              <button
+                className="search-filter-trigger"
+                onClick={() => setShowFilterDrawer(true)}
+              >
+                筛选
+              </button>
+            </div>
+
+            {/* 右侧：两个独立操作圆形图标 (下载缓存 + 历史记录) */}
+            <div className="header-action-group">
+              {/* 下载缓存 */}
+              <button
+                className="header-circle-btn"
+                onClick={() => setShowDownloadDrawer(true)}
+                title="离线缓存"
+              >
+                <Download size={18} strokeWidth={2.2} />
+              </button>
+
+              {/* 历史记录 */}
+              <button
+                className="header-circle-btn"
+                onClick={() => setShowHistoryDrawer(true)}
+                title="观看历史"
+              >
+                <Clock size={18} strokeWidth={2.2} />
+              </button>
+            </div>
+          </header>
+
+          {/* 2. 二级频道水平弹性滚动条 (首页 | 短剧 | 直播 | 电视剧 | 电影...) */}
+          <nav className="channel-tabs-container">
+            <div className="channel-tabs-scroll">
+              {CHANNELS.map((channel) => (
+                <button
+                  key={channel}
+                  className={`channel-tab-item ${activeChannel === channel ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveChannel(channel);
+                    setHasSearched(false);
+                    if (channel === "短剧") {
+                      setActiveBottomTab("shorts");
+                    } else {
+                      setActiveBottomTab("home");
+                    }
+                  }}
+                >
+                  {channel}
+                </button>
+              ))}
+            </div>
+          </nav>
+        </>
+      ) : (
+        <div className="category-library-header">
+          <button
+            className="library-back-btn"
+            onClick={handleCloseCategoryLibrary}
+          >
+            <ChevronLeft size={22} />
+            <span>返回</span>
+          </button>
+          <div className="library-title-center">
+            <span className="library-title-text">{activeCategoryLibrary}库</span>
+            <span className="library-badge-pill">{filteredLibraryVideos.length} 部</span>
+          </div>
+          <button
+            className="library-search-btn"
+            onClick={() => {
+              setActiveCategoryLibrary(null);
             }}
-          />
-          {searchKeyword && (
-            <button
-              className="capsule-clear-btn"
-              onClick={() => {
-                setSearchKeyword("");
-                setHasSearched(false);
-                setSearchResults([]);
-              }}
-            >
-              <X size={14} />
-            </button>
-          )}
-          <span className="search-capsule-divider"></span>
-          <button
-            className="search-filter-trigger"
-            onClick={() => setShowFilterDrawer(true)}
+            title="搜索"
           >
-            筛选
+            <Search size={18} />
           </button>
         </div>
-
-        {/* 右侧：两个独立操作圆形图标 (下载缓存 + 历史记录) */}
-        <div className="header-action-group">
-          {/* 下载缓存 */}
-          <button
-            className="header-circle-btn"
-            onClick={() => setShowDownloadDrawer(true)}
-            title="离线缓存"
-          >
-            <Download size={18} strokeWidth={2.2} />
-          </button>
-
-          {/* 历史记录 */}
-          <button
-            className="header-circle-btn"
-            onClick={() => setShowHistoryDrawer(true)}
-            title="观看历史"
-          >
-            <Clock size={18} strokeWidth={2.2} />
-          </button>
-        </div>
-      </header>
-
-      {/* =========================================================
-          2. 二级频道水平弹性滚动条 (首页 | 短剧 | 直播 | 电视剧 | 电影...)
-          ========================================================= */}
-      <nav className="channel-tabs-container">
-        <div className="channel-tabs-scroll">
-          {CHANNELS.map((channel) => (
-            <button
-              key={channel}
-              className={`channel-tab-item ${activeChannel === channel ? "active" : ""}`}
-              onClick={() => {
-                setActiveChannel(channel);
-                setHasSearched(false);
-                if (channel === "短剧") {
-                  setActiveBottomTab("shorts");
-                } else {
-                  setActiveBottomTab("home");
-                }
-              }}
-            >
-              {channel}
-            </button>
-          ))}
-        </div>
-      </nav>
+      )}
 
       {/* =========================================================
           3. 主视口内容区 (根据底栏切换: 首页流 / 短剧流 / 排行榜 / 我的)
           ========================================================= */}
       <main className="bagtrim-main-view">
-        {/* TAB 1: 首页长流 (Home) */}
+        {/* TAB 1: 首页长流 (Home) / 原生形态 B 分类影视全量库 */}
         {activeBottomTab === "home" && (
-          <div className="home-content-stream">
-            {/* 焦点推荐大卡片 Hero Banner (每个频道均展示该频道的“正在热播”宽幅横条，1:1 对齐真机截图) */}
-            {channelBannerVideo && !hasSearched && (
-              <div
-                className="hero-banner-card"
-                onClick={() => selectVideo(channelBannerVideo)}
-              >
-                <img
-                  src={channelBannerVideo.pic}
-                  alt={channelBannerVideo.title}
-                  className="hero-banner-img"
-                  loading="eager"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=70";
-                  }}
-                />
-                <div className="hero-banner-gradient"></div>
-                <div className="hero-banner-info">
-                  <h2 className="hero-banner-title">{channelBannerVideo.title}</h2>
-                  <div className="hero-banner-hot-label">
-                    <span className="hot-label-text">正在热播</span>
+          activeCategoryLibrary ? (
+            <div className="category-library-view">
+              {/* 多维横滑筛选项 (Sticky Filter Bar) */}
+              <div className="category-filter-chips-section">
+                {/* 题材类型 */}
+                <div className="filter-chips-row">
+                  <span className="filter-row-label">类型</span>
+                  <div className="filter-chips-scroll">
+                    {(CHANNEL_GENRES_MAP[activeCategoryLibrary] || FILTER_GENRES).map((genre) => (
+                      <button
+                        key={genre}
+                        className={`filter-chip-pill ${libraryGenre === genre ? "active" : ""}`}
+                        onClick={() => setLibraryGenre(genre)}
+                      >
+                        {genre}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 地区 */}
+                <div className="filter-chips-row">
+                  <span className="filter-row-label">地区</span>
+                  <div className="filter-chips-scroll">
+                    {FILTER_REGIONS.map((region) => (
+                      <button
+                        key={region}
+                        className={`filter-chip-pill ${libraryRegion === region ? "active" : ""}`}
+                        onClick={() => setLibraryRegion(region)}
+                      >
+                        {region}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 年份 */}
+                <div className="filter-chips-row">
+                  <span className="filter-row-label">年份</span>
+                  <div className="filter-chips-scroll">
+                    {FILTER_YEARS.map((year) => (
+                      <button
+                        key={year}
+                        className={`filter-chip-pill ${libraryYear === year ? "active" : ""}`}
+                        onClick={() => setLibraryYear(year)}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 排序 */}
+                <div className="filter-chips-row sort-row">
+                  <span className="filter-row-label">排序</span>
+                  <div className="filter-chips-scroll">
+                    {FILTER_SORTS.map((sort) => (
+                      <button
+                        key={sort}
+                        className={`filter-chip-pill ${librarySort === sort ? "active" : ""}`}
+                        onClick={() => setLibrarySort(sort)}
+                      >
+                        {sort}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* 搜索提示或无结果 */}
-            {hasSearched && (
-              <div className="search-result-hint">
-                <span>搜索结果：{displayedVideos.length} 部影片</span>
+              {/* 筛选结果统计条与重置按键 */}
+              <div className="library-result-meta-bar">
+                <span className="result-meta-text">
+                  共找到 <strong>{filteredLibraryVideos.length}</strong> 部{activeCategoryLibrary}
+                  {(libraryGenre !== "全部" || libraryRegion !== "全部" || libraryYear !== "全部") && (
+                    <span className="active-filter-tags">
+                      {libraryGenre !== "全部" && ` · ${libraryGenre}`}
+                      {libraryRegion !== "全部" && ` · ${libraryRegion}`}
+                      {libraryYear !== "全部" && ` · ${libraryYear}`}
+                    </span>
+                  )}
+                </span>
+                {(libraryGenre !== "全部" || libraryRegion !== "全部" || libraryYear !== "全部" || librarySort !== "按热门推荐") && (
+                  <button
+                    className="library-reset-filter-btn"
+                    onClick={() => {
+                      setLibraryGenre("全部");
+                      setLibraryRegion("全部");
+                      setLibraryYear("全部");
+                      setLibrarySort("按热门推荐");
+                    }}
+                  >
+                    重置筛选
+                  </button>
+                )}
+              </div>
+
+              {/* 全量影视卡片双列瀑布流 (无 Banner 占用，空间利用率最大化) */}
+              {filteredLibraryVideos.length === 0 ? (
+                <div className="library-empty-state">
+                  <div className="empty-state-icon">🎬</div>
+                  <div className="empty-state-title">未找到符合条件的{activeCategoryLibrary}</div>
+                  <div className="empty-state-desc">您可以尝试放宽筛选条件，或重置后再查看</div>
+                  <button
+                    className="empty-state-reset-btn"
+                    onClick={() => {
+                      setLibraryGenre("全部");
+                      setLibraryRegion("全部");
+                      setLibraryYear("全部");
+                      setLibrarySort("按热门推荐");
+                    }}
+                  >
+                    重置全部筛选
+                  </button>
+                </div>
+              ) : (
+                <div className="video-cards-grid library-cards-grid">
+                  {filteredLibraryVideos.map((item) => (
+                    <div
+                      key={item.id}
+                      className="video-poster-card"
+                      onClick={() => selectVideo(item)}
+                    >
+                      <div className="poster-wrapper">
+                        <img
+                          src={item.pic}
+                          alt={item.title}
+                          className="poster-img"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&auto=format&fit=crop&q=60";
+                          }}
+                        />
+                        <div className="poster-status-badge">
+                          {item.remarks || "正片"}
+                        </div>
+                      </div>
+                      <div className="card-info-wrap">
+                        <div className="card-main-title">{item.title}</div>
+                        <div className="card-sub-title">
+                          {item.subTitle || item.vodClass || "超清无广告独家极速播放"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 列表触底提示 */}
+              <div className="library-bottom-tip">
+                <span>— 已经到底啦 (共 {filteredLibraryVideos.length} 部影片) —</span>
+              </div>
+
+              {/* 回到顶部浮动按键 */}
+              {showBackToTop && (
                 <button
-                  className="reset-search-btn"
-                  onClick={() => {
-                    setHasSearched(false);
-                    setSearchKeyword("");
-                  }}
+                  className="library-back-to-top-btn"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  title="回到顶部"
                 >
-                  返回推荐
+                  <ArrowUp size={18} />
                 </button>
-              </div>
-            )}
+              )}
 
-            {/* 双列横版网格瀑布流 (2-Column Grid，1:1 对标截图) */}
-            <div className={`video-cards-grid ${isRefreshing ? "is-refreshing-grid" : ""}`}>
-              {displayedVideos.map((item) => (
-                <div
-                  key={item.id}
-                  className="video-poster-card"
-                  onClick={() => selectVideo(item)}
-                >
-                  {/* 横版海报缩略图容器 (16:10 比例) */}
-                  <div className="poster-wrapper">
-                    <img
-                      src={item.pic}
-                      alt={item.title}
-                      className="poster-img"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&auto=format&fit=crop&q=60";
-                      }}
-                    />
-                    {/* 右下角状态药丸 Badge (半透明黑底高斯模糊) */}
-                    <div className="poster-status-badge">
-                      {item.remarks || "全集"}
-                    </div>
-                  </div>
-
-                  {/* 标题与副标题排版 */}
-                  <div className="card-info-wrap">
-                    <div className="card-main-title">{item.title}</div>
-                    <div className="card-sub-title">
-                      {item.subTitle || item.vodClass || "超清无广告独家极速播放"}
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {/* 避让底栏高度垫片 */}
+              <div className="dock-spacer"></div>
             </div>
+          ) : (
+            <div className="home-content-stream">
+              {/* 焦点推荐大卡片 Hero Banner (每个频道均展示该频道的“正在热播”宽幅横条，1:1 对齐真机截图) */}
+              {channelBannerVideo && !hasSearched && (
+                <div
+                  className="hero-banner-card"
+                  onClick={() => selectVideo(channelBannerVideo)}
+                >
+                  <img
+                    src={channelBannerVideo.pic}
+                    alt={channelBannerVideo.title}
+                    className="hero-banner-img"
+                    loading="eager"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=70";
+                    }}
+                  />
+                  <div className="hero-banner-gradient"></div>
+                  <div className="hero-banner-info">
+                    <h2 className="hero-banner-title">{channelBannerVideo.title}</h2>
+                    <div className="hero-banner-hot-label">
+                      <span className="hot-label-text">正在热播</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            {/* 频道底部的【查看全部】与【换一换】双胶囊按键 (1:1 复刻真机截图) */}
-            {!hasSearched && gridCandidateVideos.length > 0 && (
-              <div className="channel-section-footer">
-                <button
-                  className={`channel-action-capsule view-all ${channelExpandedMap[activeChannel] ? "active" : ""}`}
-                  onClick={handleToggleViewAll}
-                >
-                  <LayoutGrid size={16} />
-                  <span>{channelExpandedMap[activeChannel] ? "收起精选" : "查看全部"}</span>
-                </button>
-                <button
-                  className="channel-action-capsule refresh"
-                  onClick={handleRefreshChannelVideos}
-                  disabled={isRefreshing}
-                >
-                  <RefreshCw size={16} className={isRefreshing ? "rotating-icon" : ""} />
-                  <span>换一换</span>
-                </button>
+              {/* 搜索提示或无结果 */}
+              {hasSearched && (
+                <div className="search-result-hint">
+                  <span>搜索结果：{displayedVideos.length} 部影片</span>
+                  <button
+                    className="reset-search-btn"
+                    onClick={() => {
+                      setHasSearched(false);
+                      setSearchKeyword("");
+                    }}
+                  >
+                    返回推荐
+                  </button>
+                </div>
+              )}
+
+              {/* 双列横版网格瀑布流 (2-Column Grid，1:1 对标截图) */}
+              <div className={`video-cards-grid ${isRefreshing ? "is-refreshing-grid" : ""}`}>
+                {displayedVideos.map((item) => (
+                  <div
+                    key={item.id}
+                    className="video-poster-card"
+                    onClick={() => selectVideo(item)}
+                  >
+                    {/* 横版海报缩略图容器 (16:10 比例) */}
+                    <div className="poster-wrapper">
+                      <img
+                        src={item.pic}
+                        alt={item.title}
+                        className="poster-img"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&auto=format&fit=crop&q=60";
+                        }}
+                      />
+                      {/* 右下角状态药丸 Badge (半透明黑底高斯模糊) */}
+                      <div className="poster-status-badge">
+                        {item.remarks || "全集"}
+                      </div>
+                    </div>
+
+                    {/* 标题与副标题排版 */}
+                    <div className="card-info-wrap">
+                      <div className="card-main-title">{item.title}</div>
+                      <div className="card-sub-title">
+                        {item.subTitle || item.vodClass || "超清无广告独家极速播放"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
 
-            {/* 底部避让悬浮胶囊的高度垫片 */}
-            <div className="dock-spacer"></div>
-          </div>
+              {/* 频道底部的【查看全部】与【换一换】双胶囊按键 (1:1 复刻真机截图) */}
+              {!hasSearched && gridCandidateVideos.length > 0 && (
+                <div className="channel-section-footer">
+                  <button
+                    className="channel-action-capsule view-all"
+                    onClick={() => handleOpenCategoryLibrary(activeChannel)}
+                  >
+                    <LayoutGrid size={16} />
+                    <span>查看全部</span>
+                  </button>
+                  <button
+                    className="channel-action-capsule refresh"
+                    onClick={handleRefreshChannelVideos}
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCw size={16} className={isRefreshing ? "rotating-icon" : ""} />
+                    <span>换一换</span>
+                  </button>
+                </div>
+              )}
+
+              {/* 底部避让悬浮胶囊的高度垫片 */}
+              <div className="dock-spacer"></div>
+            </div>
+          )
         )}
 
         {/* TAB 2: 短剧沉浸流 (Shorts) */}
@@ -1477,7 +1814,12 @@ export default function App() {
           {/* 首页 Tab (选中时带独特的浅色半透明圆角底色背板) */}
           <button
             className={`dock-nav-item ${activeBottomTab === "home" ? "active" : ""}`}
-            onClick={() => setActiveBottomTab("home")}
+            onClick={() => {
+              if (activeBottomTab === "home" && activeCategoryLibrary) {
+                setActiveCategoryLibrary(null);
+              }
+              setActiveBottomTab("home");
+            }}
           >
             {/* 1:1 复刻截图中的倾斜菱形播放方块图标 */}
             <svg
@@ -2111,9 +2453,16 @@ export default function App() {
               </button>
               <button
                 className="filter-apply-btn"
-                onClick={() => setShowFilterDrawer(false)}
+                onClick={() => {
+                  setShowFilterDrawer(false);
+                  if (selectedFilterCategory !== "全部") {
+                    handleOpenCategoryLibrary(selectedFilterCategory);
+                  }
+                }}
               >
-                确定应用 ({displayedVideos.length}部)
+                {selectedFilterCategory !== "全部"
+                  ? `进入${selectedFilterCategory}库 (${displayedVideos.length}部)`
+                  : `确定应用 (${displayedVideos.length}部)`}
               </button>
             </div>
           </div>
