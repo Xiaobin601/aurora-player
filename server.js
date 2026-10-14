@@ -54,6 +54,36 @@ const ONLINE_APIS = [
   },
 ];
 
+function cleanTitle(raw) {
+  let t = (raw || "").trim();
+  if (!t) return "未命名影片";
+
+  let specialTag = "";
+  if (t.includes("动态漫画")) specialTag = "动态漫画";
+  else if (t.includes("解说")) specialTag = "解说";
+  else if (t.includes("真人")) specialTag = "真人版";
+  else if (t.includes("预告")) specialTag = "预告片";
+
+  t = t.replace(/\(.*?\)|\[.*?\]|（.*?）|【.*?】/g, " ");
+  t = t.replace(/(3D动漫版|3D动画版|3D版|动画版|动漫版|第一季|第1季|第二季|第2季|国语版|普通话版|4K修复版|4K超清|4K版|4K|1080P|HD|BD|TC)/gi, " ");
+  t = t.replace(/\s+/g, " ").trim();
+
+  if (specialTag && !t.includes(specialTag)) {
+    t = `${t} (${specialTag})`;
+  }
+  return t || raw.trim();
+}
+
+function getSourceWeight(name) {
+  if (name.includes("虎牙秒播")) return 100;
+  if (name.includes("光速高速")) return 90;
+  if (name.includes("红牛极速")) return 80;
+  if (name.includes("新浪超清")) return 70;
+  if (name.includes("量子蓝光")) return 40;
+  if (name.includes("非凡高速")) return 30;
+  return 50;
+}
+
 // 解析 MacCMS 播放列表
 function parsePlayUrls(playFrom, playUrl, prefix) {
   const fromList = (playFrom || "默认线路").split("$$$");
@@ -83,14 +113,12 @@ function parsePlayUrls(playFrom, playUrl, prefix) {
       }
     }
 
-    if (episodes.length > 0) {
-      const hasM3u8 = episodes.some((e) => e.url.includes(".m3u8"));
-      if (hasM3u8 || !groupName.includes("yun")) {
-        sources.push({
-          sourceName: `${prefix} · ${groupName} (${episodes.length}集)`,
-          episodes,
-        });
-      }
+    // 严苛过滤：只保留包含 .m3u8 的真实播放流，彻底过滤外部分享页与跳转页
+    if (episodes.length > 0 && episodes.some((e) => e.url.includes(".m3u8"))) {
+      sources.push({
+        sourceName: `${prefix} · ${groupName} (${episodes.length}集)`,
+        episodes,
+      });
     }
   }
   return sources;
@@ -136,20 +164,25 @@ async function handleSearch(kw) {
     }
   }
 
-  // 跨源同名归并
+  // 跨源同名归并并按权重排布
   const map = new Map();
   for (const it of rawItems) {
-    if (map.has(it.title)) {
-      const ex = map.get(it.title);
+    const canonicalTitle = cleanTitle(it.title);
+    if (map.has(canonicalTitle)) {
+      const ex = map.get(canonicalTitle);
       ex.sources.push(...it.sources);
+      ex.sources.sort((a, b) => getSourceWeight(b.sourceName) - getSourceWeight(a.sourceName));
       if (!ex.pic && it.pic) ex.pic = it.pic;
+      if (it.remarks && (!ex.remarks || ex.remarks === "全集")) ex.remarks = it.remarks;
     } else {
-      map.set(it.title, { ...it });
+      it.title = canonicalTitle;
+      it.sources.sort((a, b) => getSourceWeight(b.sourceName) - getSourceWeight(a.sourceName));
+      map.set(canonicalTitle, { ...it });
     }
   }
 
   const results = Array.from(map.values());
-  const lowerKw = kw.toLowerCase();
+  const lowerKw = kw.toLowerCase().trim();
   results.sort((a, b) => {
     const aEq = a.title.toLowerCase() === lowerKw ? 1 : 0;
     const bEq = b.title.toLowerCase() === lowerKw ? 1 : 0;

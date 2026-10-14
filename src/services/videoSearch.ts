@@ -57,6 +57,36 @@ function normalizeMediaUrl(url: string): string {
   }
 }
 
+export function cleanTitle(raw: string): string {
+  let t = (raw || "").trim();
+  if (!t) return "未命名影片";
+
+  let specialTag = "";
+  if (t.includes("动态漫画")) specialTag = "动态漫画";
+  else if (t.includes("解说")) specialTag = "解说";
+  else if (t.includes("真人")) specialTag = "真人版";
+  else if (t.includes("预告")) specialTag = "预告片";
+
+  t = t.replace(/\(.*?\)|\[.*?\]|（.*?）|【.*?】/g, " ");
+  t = t.replace(/(3D动漫版|3D动画版|3D版|动画版|动漫版|第一季|第1季|第二季|第2季|国语版|普通话版|4K修复版|4K超清|4K版|4K|1080P|HD|BD|TC)/gi, " ");
+  t = t.replace(/\s+/g, " ").trim();
+
+  if (specialTag && !t.includes(specialTag)) {
+    t = `${t} (${specialTag})`;
+  }
+  return t || raw.trim();
+}
+
+export function getSourceWeight(name: string): number {
+  if (name.includes("虎牙秒播")) return 100;
+  if (name.includes("光速高速")) return 90;
+  if (name.includes("红牛极速")) return 80;
+  if (name.includes("新浪超清")) return 70;
+  if (name.includes("量子蓝光")) return 40;
+  if (name.includes("非凡高速")) return 30;
+  return 50;
+}
+
 /**
  * 解析 MacCMS V10 标准的 vod_play_from 和 vod_play_url 字符串
  */
@@ -93,20 +123,16 @@ export function parseMacCmsPlayUrls(playFrom: string, playUrl: string, apiPrefix
       }
     }
 
-    if (episodes.length > 0) {
-      // 优先保留包含 M3U8 切片流的真实直链
-      const hasM3u8 = episodes.some(e => e.url.includes(".m3u8"));
+    // 严苛过滤：只保留包含 .m3u8 的真实播放流，彻底过滤外部分享页与跳转页
+    if (episodes.length > 0 && episodes.some(e => e.url.includes(".m3u8"))) {
       const lineLabel = apiPrefix 
         ? `${apiPrefix} · ${rawGroupName} (${episodes.length}集)`
         : `${rawGroupName} (${episodes.length}集)`;
 
-      // 如果有 m3u8 则优先保留；过滤掉非视频流的外部网页解析中间页
-      if (hasM3u8 || !rawGroupName.includes("yun")) {
-        sources.push({
-          sourceName: lineLabel,
-          episodes,
-        });
-      }
+      sources.push({
+        sourceName: lineLabel,
+        episodes,
+      });
     }
   }
 
@@ -192,17 +218,20 @@ export async function searchOnlineVideos(keyword: string): Promise<VideoItem[]> 
   const groupedMap = new Map<string, VideoItem>();
 
   for (const item of rawItems) {
-    const normTitle = item.title;
-    if (groupedMap.has(normTitle)) {
-      const existing = groupedMap.get(normTitle)!;
-      // 追增播放线路
+    const canonicalTitle = cleanTitle(item.title);
+    if (groupedMap.has(canonicalTitle)) {
+      const existing = groupedMap.get(canonicalTitle)!;
+      // 追增播放线路并按质量权重排序 (秒播源置顶)
       existing.sources.push(...item.sources);
+      existing.sources.sort((a, b) => getSourceWeight(b.sourceName) - getSourceWeight(a.sourceName));
       if (!existing.pic && item.pic) existing.pic = item.pic;
       if (item.remarks && (!existing.remarks || item.remarks.length > existing.remarks.length)) {
         existing.remarks = item.remarks;
       }
     } else {
-      groupedMap.set(normTitle, { ...item });
+      item.title = canonicalTitle;
+      item.sources.sort((a, b) => getSourceWeight(b.sourceName) - getSourceWeight(a.sourceName));
+      groupedMap.set(canonicalTitle, { ...item });
     }
   }
 

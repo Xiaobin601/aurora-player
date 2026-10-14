@@ -63,6 +63,18 @@ export default function App() {
   const [currentSourceIndex, setCurrentSourceIndex] = useState<number>(0);
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
 
+  const selectedVideoRef = useRef<VideoItem | null>(null);
+  const currentSourceIndexRef = useRef<number>(0);
+  const failoverTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    selectedVideoRef.current = selectedVideo;
+  }, [selectedVideo]);
+
+  useEffect(() => {
+    currentSourceIndexRef.current = currentSourceIndex;
+  }, [currentSourceIndex]);
+
   // 移动端专用 Tab 切换 ('episodes' | 'search' | 'settings')
   const [mobileTab, setMobileTab] = useState<"episodes" | "search" | "settings">("episodes");
 
@@ -157,6 +169,7 @@ export default function App() {
   // 切换播放线路
   const switchSource = (sourceIndex: number) => {
     setCurrentSourceIndex(sourceIndex);
+    currentSourceIndexRef.current = sourceIndex;
     if (!selectedVideo) return;
     const targetSource = selectedVideo.sources[sourceIndex];
     if (targetSource && targetSource.episodes.length > 0) {
@@ -166,6 +179,25 @@ export default function App() {
       const targetEp = targetSource.episodes[nextEpIndex];
       playEpisode(targetEp, selectedVideo.title);
     }
+  };
+
+  // 线路异常自动故障转移 (Failover)
+  const autoFailoverNextSource = (reason: string) => {
+    const video = selectedVideoRef.current;
+    const currentIdx = currentSourceIndexRef.current;
+    if (!video || video.sources.length <= 1) {
+      setStatusMessage(`播放失败: ${reason} (暂无其他可用线路)`);
+      return;
+    }
+
+    const nextIdx = (currentIdx + 1) % video.sources.length;
+    const nextSource = video.sources[nextIdx];
+    setStatusMessage(`当前线路加载失败，已自动故障转移至: ${nextSource.sourceName}...`);
+
+    if (failoverTimeoutRef.current) clearTimeout(failoverTimeoutRef.current);
+    failoverTimeoutRef.current = setTimeout(() => {
+      switchSource(nextIdx);
+    }, 800);
   };
 
   // 3. 核心播放引擎 (加载 M3U8 / 通过代理清洗图片头)
@@ -225,19 +257,26 @@ export default function App() {
         }));
       });
 
+      let netErrorRetry = 0;
       hls.on(Hls.Events.ERROR, (_, data) => {
         if (data.fatal) {
           console.warn("[Hls Error]", data);
-          setStatusMessage(`流重载中: ${data.type}`);
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              hls.startLoad();
+              netErrorRetry++;
+              if (netErrorRetry <= 1) {
+                setStatusMessage(`网络波动，正在重试...`);
+                hls.startLoad();
+              } else {
+                autoFailoverNextSource("网络解析超时或资源失效 (networkError)");
+              }
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               hls.recoverMediaError();
               break;
             default:
               hls.destroy();
+              autoFailoverNextSource("流媒体解析异常");
               break;
           }
         }
@@ -245,6 +284,9 @@ export default function App() {
     } else {
       // iOS Safari 原生 HLS 支持
       video.src = effectiveUrl;
+      video.onerror = () => {
+        autoFailoverNextSource("视频源加载失败");
+      };
       video.play().catch(() => {});
       setStatusMessage(`正在播放: ${videoTitle} (${episode.name})`);
     }
