@@ -24,6 +24,8 @@ import {
   Share2,
   Heart,
   ArrowUpDown,
+  Calendar,
+  Star,
 } from "lucide-react";
 import presetData from "./data/presetLibrary.json";
 import { searchOnlineVideos } from "./services/videoSearch";
@@ -175,6 +177,11 @@ export default function App() {
 
   // 短剧当前选中的剧集索引
   const [currentShortIndex, setCurrentShortIndex] = useState<number>(0);
+
+  // 1:1 BagTrim 原生详情页二级 Tab 与互动状态
+  const [activeDetailTab, setActiveDetailTab] = useState<"detail" | "discuss">("detail");
+  const [isLiked, setIsLiked] = useState<boolean>(false);
+  const [isCollected, setIsCollected] = useState<boolean>(false);
 
   const selectedVideoRef = useRef<VideoItem | null>(null);
   const currentSourceIndexRef = useRef<number>(0);
@@ -1262,249 +1269,321 @@ export default function App() {
       </nav>
 
       {/* =========================================================
-          5. 播放器模态层 (全功能播放视口，支持选集、换源、横屏沉浸全屏)
+          5. 1:1 复刻 BagTrim 原生吸顶播放详情页
           ========================================================= */}
       {selectedVideo && showPlayerModal && (
         <div
-          className={`player-modal-overlay ${isFullscreen ? "is-fullscreen" : ""} ${
+          className={`bagtrim-player-page ${isFullscreen ? "is-fullscreen" : ""} ${
             isLandscapeFullscreen ? "is-landscape-fullscreen" : ""
           } ${rotationAngle === 270 ? "rotate-270" : ""}`}
         >
-          <div className="player-modal-window">
-            {/* 视频容器 */}
-            <div
-              className="video-container"
-              ref={videoContainerRef}
-              onClick={handleVideoTap}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                togglePlay();
-              }}
-            >
-              <video
-                ref={videoRef}
-                controls={!isLandscapeFullscreen && !isFullscreen}
-                autoPlay
-                playsInline
-                webkit-playsinline="true"
-              />
+          {/* 顶部吸顶 16:9 播放视口 */}
+          <div
+            className="player-sticky-viewport"
+            ref={videoContainerRef}
+            onClick={handleVideoTap}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              togglePlay();
+            }}
+          >
+            <video
+              ref={videoRef}
+              controls={!isLandscapeFullscreen && !isFullscreen}
+              autoPlay
+              playsInline
+              webkit-playsinline="true"
+            />
 
-              {/* 非全屏模式下的右上角快捷按键 (关闭 + 全屏) */}
-              {!isLandscapeFullscreen && !isFullscreen && (
-                <div className="player-top-floating-actions">
-                  <button
-                    className="floating-icon-btn close-btn"
-                    onClick={() => {
-                      setShowPlayerModal(false);
-                      if (failoverTimeoutRef.current) {
-                        clearTimeout(failoverTimeoutRef.current);
-                        failoverTimeoutRef.current = null;
-                      }
-                      if (hlsRef.current) {
-                        hlsRef.current.destroy();
-                        hlsRef.current = null;
-                      }
-                      if (videoRef.current) {
-                        videoRef.current.pause();
-                        videoRef.current.removeAttribute("src");
-                        videoRef.current.load();
-                      }
-                      setCurrentEpisode(null);
-                    }}
-                    title="收起播放器"
-                  >
-                    <X size={18} />
-                  </button>
-                  <button
-                    className="floating-icon-btn fullscreen-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFullscreen();
-                    }}
-                    title="横屏全屏播放"
-                  >
-                    <Maximize size={18} />
-                  </button>
-                </div>
-              )}
-
-              {/* 现代沉浸全屏播放器覆盖层 (在全屏模式下显现) */}
-              {(isLandscapeFullscreen || isFullscreen) && (
-                <>
-                  {/* 顶部控制栏 */}
-                  <div
-                    className={`modern-player-top ${showControls ? "visible" : "hidden"}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="top-left-group">
-                      <button
-                        className="modern-icon-btn back-btn"
-                        onClick={toggleFullscreen}
-                        title="退出全屏"
-                      >
-                        <ChevronLeft size={24} />
-                      </button>
-                      <div className="modern-title-group">
-                        <span className="modern-video-title">
-                          {selectedVideo?.title}
-                          {currentEpisode?.name ? ` · ${currentEpisode.name}` : ""}
-                        </span>
-                        {selectedVideo?.sources[currentSourceIndex]?.sourceName && (
-                          <span className="modern-source-badge">
-                            {selectedVideo.sources[currentSourceIndex].sourceName}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="top-right-group">
-                      <button
-                        className="modern-icon-btn"
-                        onClick={toggleRotationAngle}
-                        title={`翻转方向 (${rotationAngle}°)`}
-                      >
-                        <RotateCw size={18} />
-                        <span className="btn-hint-text">翻转</span>
-                      </button>
-                      <button
-                        className={`modern-icon-btn ${showEpisodeDrawer ? "active" : ""}`}
-                        onClick={() => setShowEpisodeDrawer((v) => !v)}
-                        title="选集列表"
-                      >
-                        <List size={18} />
-                        <span className="btn-hint-text">选集</span>
-                      </button>
-                      <button
-                        className="modern-icon-btn"
-                        onClick={toggleFullscreen}
-                        title="退出全屏"
-                      >
-                        <Minimize size={18} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 底部控制栏 */}
-                  <div
-                    className={`modern-player-bottom ${showControls ? "visible" : "hidden"}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* 进度条 */}
-                    <div className="modern-progress-bar-wrap">
-                      <span className="modern-time-text">{formatTime(currentTime)}</span>
-                      <input
-                        type="range"
-                        className="modern-progress-slider"
-                        min={0}
-                        max={duration || 100}
-                        value={currentTime}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          setCurrentTime(val);
-                          if (videoRef.current) videoRef.current.currentTime = val;
-                        }}
-                      />
-                      <span className="modern-time-text total">{formatTime(duration)}</span>
-                    </div>
-
-                    {/* 动作按键排 */}
-                    <div className="modern-controls-row">
-                      <div className="left-controls">
-                        <button
-                          className="modern-icon-btn play-pause-btn"
-                          onClick={togglePlay}
-                        >
-                          {isPlaying ? <Pause size={22} /> : <Play size={22} />}
-                        </button>
-                        <button
-                          className="modern-icon-btn"
-                          onClick={() => playNextEpisode(-1)}
-                          title="上一集"
-                        >
-                          <SkipBack size={18} />
-                        </button>
-                        <button
-                          className="modern-icon-btn"
-                          onClick={() => playNextEpisode(1)}
-                          title="下一集"
-                        >
-                          <SkipForward size={18} />
-                        </button>
-                        <button
-                          className="modern-icon-btn"
-                          onClick={() => seekRelative(-10)}
-                          title="快退 10 秒"
-                        >
-                          <span className="btn-sec-text">-10s</span>
-                        </button>
-                        <button
-                          className="modern-icon-btn"
-                          onClick={() => seekRelative(10)}
-                          title="快进 10 秒"
-                        >
-                          <span className="btn-sec-text">+10s</span>
-                        </button>
-                      </div>
-
-                      <div className="right-controls">
-                        <button
-                          className="modern-rate-btn"
-                          onClick={cyclePlaybackRate}
-                        >
-                          {playbackRate === 1.0 ? "倍速" : `${playbackRate}x`}
-                        </button>
-                        <button
-                          className="modern-rate-btn"
-                          onClick={() => setShowEpisodeDrawer(true)}
-                        >
-                          选集
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* 播放器下方详情与选集（竖屏半模态展示） */}
+            {/* 非全屏模式下的返回按钮 (左上角半透明圆形返回按键，1:1 复刻截图) */}
             {!isLandscapeFullscreen && !isFullscreen && (
-              <div className="player-modal-body">
-                <div className="player-meta-info">
-                  <h3 className="player-vod-title">{selectedVideo.title}</h3>
-                  <div className="player-vod-sub">
-                    {selectedVideo.subTitle || selectedVideo.remarks}
-                    <span className="player-status-tag"> · {statusMessage}</span>
+              <button
+                className="bagtrim-floating-back-btn"
+                onClick={() => {
+                  setShowPlayerModal(false);
+                  if (failoverTimeoutRef.current) {
+                    clearTimeout(failoverTimeoutRef.current);
+                    failoverTimeoutRef.current = null;
+                  }
+                  if (hlsRef.current) {
+                    hlsRef.current.destroy();
+                    hlsRef.current = null;
+                  }
+                  if (videoRef.current) {
+                    videoRef.current.pause();
+                    videoRef.current.removeAttribute("src");
+                    videoRef.current.load();
+                  }
+                  setCurrentEpisode(null);
+                }}
+                title="返回上一页"
+              >
+                <ChevronLeft size={22} />
+              </button>
+            )}
+
+            {/* 非全屏模式下的右上角全屏按键 */}
+            {!isLandscapeFullscreen && !isFullscreen && (
+              <button
+                className="bagtrim-floating-fullscreen-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFullscreen();
+                }}
+                title="横屏全屏播放"
+              >
+                <Maximize size={18} />
+              </button>
+            )}
+
+            {/* 现代沉浸全屏播放器覆盖层 (在全屏模式下显现) */}
+            {(isLandscapeFullscreen || isFullscreen) && (
+              <>
+                {/* 顶部控制栏 */}
+                <div
+                  className={`modern-player-top ${showControls ? "visible" : "hidden"}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="top-left-group">
+                    <button
+                      className="modern-icon-btn back-btn"
+                      onClick={toggleFullscreen}
+                      title="退出全屏"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                    <div className="modern-title-group">
+                      <span className="modern-video-title">
+                        {selectedVideo?.title}
+                        {currentEpisode?.name ? ` · ${currentEpisode.name}` : ""}
+                      </span>
+                      {selectedVideo?.sources[currentSourceIndex]?.sourceName && (
+                        <span className="modern-source-badge">
+                          {selectedVideo.sources[currentSourceIndex].sourceName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="top-right-group">
+                    <button
+                      className="modern-icon-btn"
+                      onClick={toggleRotationAngle}
+                      title={`翻转方向 (${rotationAngle}°)`}
+                    >
+                      <RotateCw size={18} />
+                      <span className="btn-hint-text">翻转</span>
+                    </button>
+                    <button
+                      className={`modern-icon-btn ${showEpisodeDrawer ? "active" : ""}`}
+                      onClick={() => setShowEpisodeDrawer((v) => !v)}
+                      title="选集列表"
+                    >
+                      <List size={18} />
+                      <span className="btn-hint-text">选集</span>
+                    </button>
+                    <button
+                      className="modern-icon-btn"
+                      onClick={toggleFullscreen}
+                      title="退出全屏"
+                    >
+                      <Minimize size={18} />
+                    </button>
                   </div>
                 </div>
 
-                {/* 线路选择 */}
-                {selectedVideo.sources.length > 1 && (
-                  <div className="player-source-selector">
-                    <span className="selector-label">切换线路：</span>
-                    <div className="source-chips">
-                      {selectedVideo.sources.map((src, idx) => (
-                        <button
-                          key={idx}
-                          className={`source-chip ${currentSourceIndex === idx ? "active" : ""}`}
-                          onClick={() => switchSource(idx)}
-                        >
-                          {src.sourceName}
-                        </button>
-                      ))}
+                {/* 底部控制栏 */}
+                <div
+                  className={`modern-player-bottom ${showControls ? "visible" : "hidden"}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* 进度条 */}
+                  <div className="modern-progress-bar-wrap">
+                    <span className="modern-time-text">{formatTime(currentTime)}</span>
+                    <input
+                      type="range"
+                      className="modern-progress-slider"
+                      min={0}
+                      max={duration || 100}
+                      value={currentTime}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setCurrentTime(val);
+                        if (videoRef.current) videoRef.current.currentTime = val;
+                      }}
+                    />
+                    <span className="modern-time-text total">{formatTime(duration)}</span>
+                  </div>
+
+                  {/* 动作按键排 */}
+                  <div className="modern-controls-row">
+                    <div className="left-controls">
+                      <button
+                        className="modern-icon-btn play-pause-btn"
+                        onClick={togglePlay}
+                      >
+                        {isPlaying ? <Pause size={22} /> : <Play size={22} />}
+                      </button>
+                      <button
+                        className="modern-icon-btn"
+                        onClick={() => playNextEpisode(-1)}
+                        title="上一集"
+                      >
+                        <SkipBack size={18} />
+                      </button>
+                      <button
+                        className="modern-icon-btn"
+                        onClick={() => playNextEpisode(1)}
+                        title="下一集"
+                      >
+                        <SkipForward size={18} />
+                      </button>
+                      <button
+                        className="modern-icon-btn"
+                        onClick={() => seekRelative(-10)}
+                        title="快退 10 秒"
+                      >
+                        <span className="btn-sec-text">-10s</span>
+                      </button>
+                      <button
+                        className="modern-icon-btn"
+                        onClick={() => seekRelative(10)}
+                        title="快进 10 秒"
+                      >
+                        <span className="btn-sec-text">+10s</span>
+                      </button>
+                    </div>
+
+                    <div className="right-controls">
+                      <button
+                        className="modern-rate-btn"
+                        onClick={cyclePlaybackRate}
+                      >
+                        {playbackRate === 1.0 ? "倍速" : `${playbackRate}x`}
+                      </button>
+                      <button
+                        className="modern-rate-btn"
+                        onClick={() => setShowEpisodeDrawer(true)}
+                      >
+                        选集
+                      </button>
                     </div>
                   </div>
-                )}
+                </div>
+              </>
+            )}
+          </div>
 
-                {/* 选集列表 */}
-                <div className="player-episodes-section">
-                  <div className="episodes-header">
-                    <div className="episodes-header-top">
-                      <div className="episodes-header-left">
-                        <span className="episodes-title">
-                          剧集列表 ({activeRawEpisodes.length}集)
-                        </span>
+          {/* 播放器下方详情与交互区 (竖屏模式下直接在此平铺展示与滚动) */}
+          {!isLandscapeFullscreen && !isFullscreen && (
+            <div className="bagtrim-detail-scroll-body">
+              {/* 二级 Tab：详情 (高亮) 与 讨论 6 */}
+              <div className="bagtrim-sub-tabs-bar">
+                <div className="sub-tabs-left">
+                  <button
+                    className={`sub-tab-item ${activeDetailTab === "detail" ? "active" : ""}`}
+                    onClick={() => setActiveDetailTab("detail")}
+                  >
+                    详情
+                  </button>
+                  <button
+                    className={`sub-tab-item ${activeDetailTab === "discuss" ? "active" : ""}`}
+                    onClick={() => setActiveDetailTab("discuss")}
+                  >
+                    讨论 <span className="sub-tab-badge">6</span>
+                  </button>
+                </div>
+                <div className="sub-tabs-right">
+                  <span className="live-status-pill">{statusMessage || "播放中"}</span>
+                </div>
+              </div>
+
+              {activeDetailTab === "detail" ? (
+                <>
+                  {/* 大标题 */}
+                  <h1 className="bagtrim-vod-title">{selectedVideo.title}</h1>
+
+                  {/* 药丸属性行：[📅 2026] [🔥 172] [国产] [电视剧] */}
+                  <div className="bagtrim-meta-pills-row">
+                    <span className="meta-pill">
+                      <Calendar size={13} className="pill-icon" />
+                      <span>{selectedVideo.year || "2026"}</span>
+                    </span>
+                    <span className="meta-pill">
+                      <Flame size={13} className="pill-icon flame" />
+                      <span>{selectedVideo.hits || "172"}</span>
+                    </span>
+                    <span className="meta-pill">
+                      {selectedVideo.area || "国产"}
+                    </span>
+                    <span className="meta-pill">
+                      {selectedVideo.type || (selectedVideo.category ? selectedVideo.category.replace("热门", "") : "电视剧")}
+                    </span>
+                  </div>
+
+                  {/* 三大金刚区：喜欢、下载、收藏 */}
+                  <div className="bagtrim-action-trio">
+                    <button
+                      className={`action-trio-btn ${isLiked ? "active" : ""}`}
+                      onClick={() => setIsLiked(!isLiked)}
+                    >
+                      <Heart
+                        size={17}
+                        fill={isLiked ? "#ff4757" : "none"}
+                        color={isLiked ? "#ff4757" : "#fff"}
+                      />
+                      <span>{isLiked ? "1.1万" : "1.0万"}</span>
+                    </button>
+                    <button
+                      className="action-trio-btn"
+                      onClick={() => {
+                        if (currentEpisode) {
+                          alert(`已加入下载队列: ${selectedVideo.title} ${currentEpisode.name}`);
+                        }
+                      }}
+                    >
+                      <Download size={17} />
+                      <span>下载</span>
+                    </button>
+                    <button
+                      className={`action-trio-btn ${isCollected ? "active" : ""}`}
+                      onClick={() => setIsCollected(!isCollected)}
+                    >
+                      <Star
+                        size={17}
+                        fill={isCollected ? "#ffa502" : "none"}
+                        color={isCollected ? "#ffa502" : "#fff"}
+                      />
+                      <span>{isCollected ? "已追" : "收藏"}</span>
+                    </button>
+                  </div>
+
+                  {/* 选集与线路模块 */}
+                  <div className="bagtrim-episodes-module">
+                    {/* 线路切换胶囊栏 */}
+                    {selectedVideo.sources.length > 0 && (
+                      <div className="bagtrim-sources-scroll">
+                        {selectedVideo.sources.map((src, idx) => (
+                          <button
+                            key={idx}
+                            className={`bagtrim-source-capsule ${currentSourceIndex === idx ? "active" : ""}`}
+                            onClick={() => switchSource(idx)}
+                          >
+                            {src.sourceName || `线路 ${idx + 1}`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 选集副头部：正序/倒序与分页 */}
+                    <div className="bagtrim-episodes-subhead">
+                      <div className="subhead-title">
+                        <span>剧集列表</span>
+                        <span className="total-eps-text">({activeRawEpisodes.length}集全)</span>
+                      </div>
+                      <div className="subhead-tools">
                         <button
-                          className="order-toggle-btn"
+                          className="bagtrim-order-btn"
                           onClick={() => setIsReverseOrder((prev) => !prev)}
                           title="切换正序/倒序"
                         >
@@ -1514,12 +1593,13 @@ export default function App() {
                       </div>
                     </div>
 
+                    {/* 分页器 (若集数 > 24) */}
                     {totalPages > 1 && (
-                      <div className="episodes-pager">
+                      <div className="bagtrim-pager-row">
                         {Array.from({ length: totalPages }).map((_, p) => (
                           <button
                             key={p}
-                            className={`page-num-btn ${pageIndex === p ? "active" : ""}`}
+                            className={`pager-chip ${pageIndex === p ? "active" : ""}`}
                             onClick={() => setPageIndex(p)}
                           >
                             {p * EPISODES_PER_PAGE + 1}-{Math.min((p + 1) * EPISODES_PER_PAGE, activeRawEpisodes.length)}
@@ -1527,23 +1607,94 @@ export default function App() {
                         ))}
                       </div>
                     )}
+
+                    {/* 1:1 复刻圆角正方形纯数字选集网格 */}
+                    <div className="bagtrim-square-grid">
+                      {displayedEpisodes.map((ep, idx) => {
+                        const epNum = ep.name.replace(/[^0-9]/g, "") || String(pageIndex * EPISODES_PER_PAGE + idx + 1);
+                        const isCurrentActive = currentEpisode?.url === ep.url;
+                        return (
+                          <button
+                            key={ep.url}
+                            className={`square-ep-btn ${isCurrentActive ? "active" : ""}`}
+                            onClick={() => playEpisode(ep, selectedVideo.title)}
+                            title={ep.name}
+                          >
+                            {epNum}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  <div className="episodes-tiles-grid">
-                    {displayedEpisodes.map((ep) => (
-                      <button
-                        key={ep.url}
-                        className={`ep-tile ${currentEpisode?.url === ep.url ? "active" : ""}`}
-                        onClick={() => playEpisode(ep, selectedVideo.title)}
-                      >
-                        {ep.name}
-                      </button>
-                    ))}
+                  {/* 猜你喜欢瀑布流推荐 */}
+                  <div className="bagtrim-recommend-wrap">
+                    <div className="recommend-title-bar">
+                      <span className="recommend-title">猜你喜欢</span>
+                    </div>
+                    <div className="bagtrim-recommend-grid">
+                      {presetVideos
+                        .filter((v) => v.id !== selectedVideo.id)
+                        .slice(0, 8)
+                        .map((rec) => (
+                          <div
+                            key={rec.id}
+                            className="bagtrim-rec-card"
+                            onClick={() => {
+                              setSelectedVideo(rec);
+                              setCurrentSourceIndex(0);
+                              setPageIndex(0);
+                              const firstEp = rec.sources[0]?.episodes[0] || null;
+                              if (firstEp) {
+                                playEpisode(firstEp, rec.title);
+                              }
+                            }}
+                          >
+                            <div className="rec-poster-box">
+                              <img
+                                src={rec.pic}
+                                alt={rec.title}
+                                loading="lazy"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&auto=format&fit=crop&q=60";
+                                }}
+                              />
+                              {rec.remarks && (
+                                <span className="rec-badge">{rec.remarks}</span>
+                              )}
+                            </div>
+                            <h4 className="rec-title">{rec.title}</h4>
+                            <p className="rec-subtitle">{rec.subTitle || rec.category}</p>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="bagtrim-discuss-panel">
+                  <div className="discuss-empty-box">
+                    <div className="discuss-bubble">💬</div>
+                    <div className="discuss-tip">精选弹幕与剧评 (共 6 条)</div>
+                    <div className="discuss-mock-list">
+                      <div className="discuss-item">
+                        <span className="discuss-user">影迷小张：</span>
+                        <span className="discuss-text">这剧情节奏太紧凑了，越看越上头！</span>
+                      </div>
+                      <div className="discuss-item">
+                        <span className="discuss-user">追剧达人：</span>
+                        <span className="discuss-text">男主演技炸裂，强烈推荐大家都来看看！</span>
+                      </div>
+                      <div className="discuss-item">
+                        <span className="discuss-user">夜行者：</span>
+                        <span className="discuss-text">画质好清，秒播无缓冲，体验太爽了。</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

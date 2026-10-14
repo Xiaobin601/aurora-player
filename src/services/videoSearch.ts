@@ -16,6 +16,10 @@ export interface VideoItem {
   pic: string;
   subTitle?: string;
   vodClass?: string;
+  year?: string | number;
+  hits?: string | number;
+  area?: string;
+  type?: string;
   sources: VideoSource[];
 }
 
