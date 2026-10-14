@@ -275,6 +275,22 @@ body {
   color: #fff;
 }
 
+/* 焦点横幅右侧【正在热播】渐变徽标 (1:1 对标截图) */
+.hero-banner-hot-label {
+  display: flex;
+  align-items: center;
+}
+
+.hot-label-text {
+  font-size: 15px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #ff9f1c, #ff4757);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.5px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
 .search-result-hint {
   display: flex;
   justify-content: space-between;
@@ -367,6 +383,69 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 频道底部的【查看全部】与【换一换】操作区 (1:1 复刻真机截图) */
+.channel-section-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+
+.channel-action-capsule {
+  height: 46px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(10px);
+}
+
+.channel-action-capsule:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.channel-action-capsule:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.channel-action-capsule.active {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.25);
+}
+
+/* 换一换旋转动效 */
+.rotating-icon {
+  animation: spinCw 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes spinCw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 刷新时的网格微缩与平滑过渡 */
+.video-cards-grid.is-refreshing-grid {
+  opacity: 0.65;
+  transform: scale(0.99);
+  transition: all 0.2s ease;
 }
 
 /* 避让底部悬浮 Dock 的高度垫片 */

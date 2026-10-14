@@ -27,6 +27,8 @@ import {
   Calendar,
   Star,
   Trash2,
+  LayoutGrid,
+  RefreshCw,
 } from "lucide-react";
 import presetData from "./data/presetLibrary.json";
 import { searchOnlineVideos } from "./services/videoSearch";
@@ -206,6 +208,11 @@ export default function App() {
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [isCollected, setIsCollected] = useState<boolean>(false);
 
+  // 每个频道的【换一换】批次与【查看全部】展开状态
+  const [channelPageMap, setChannelPageMap] = useState<Record<string, number>>({});
+  const [channelExpandedMap, setChannelExpandedMap] = useState<Record<string, boolean>>({});
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
   const selectedVideoRef = useRef<VideoItem | null>(null);
   const currentSourceIndexRef = useRef<number>(0);
   const currentEpisodeRef = useRef<Episode | null>(null);
@@ -282,12 +289,6 @@ export default function App() {
     });
   }, []);
 
-  // 当前首页焦点 Banner 影片 (优先选用《九门》)
-  const heroVideo = useMemo(() => {
-    const jiuMen = presetVideos.find((v) => v.title.includes("九门"));
-    return jiuMen || presetVideos[0] || null;
-  }, [presetVideos]);
-
   // 短剧精选库
   const shortsList = useMemo(() => {
     const list = presetVideos.filter(
@@ -301,12 +302,8 @@ export default function App() {
     return list.length > 0 ? list : presetVideos.slice(0, 6);
   }, [presetVideos]);
 
-  // 当前展示视频流 (综合搜索结果、频道过滤与多维筛选)
-  const displayedVideos = useMemo(() => {
-    if (hasSearched && searchResults.length > 0) {
-      return searchResults;
-    }
-
+  // 各频道的全量候选去重视频列表
+  const currentChannelFullVideos = useMemo(() => {
     let list = presetVideos;
 
     // 根据顶部频道过滤
@@ -334,7 +331,7 @@ export default function App() {
       list = list.filter((v) => v.vodClass?.includes(selectedFilterGenre) || v.subTitle?.includes(selectedFilterGenre));
     }
 
-    // 核心去重：严格按照片名唯一性过滤，彻底杜绝相同剧集在网格中重复渲染
+    // 核心去重：严格按照片名唯一性过滤
     const seenTitles = new Set<string>();
     const deduplicatedList: VideoItem[] = [];
     for (const item of list) {
@@ -346,7 +343,85 @@ export default function App() {
     }
 
     return deduplicatedList;
-  }, [presetVideos, hasSearched, searchResults, activeChannel, selectedFilterCategory, selectedFilterGenre]);
+  }, [presetVideos, activeChannel, selectedFilterCategory, selectedFilterGenre]);
+
+  // 各频道的焦点热播横幅 Banner (1:1 像素级复刻真机截图：如电视剧频道的《南部档案》等)
+  const channelBannerVideo = useMemo(() => {
+    if (hasSearched) return null;
+    if (activeChannel === "电视剧") {
+      return presetVideos.find((v) => v.title.includes("南部档案")) || currentChannelFullVideos[0] || null;
+    }
+    if (activeChannel === "首页") {
+      return presetVideos.find((v) => v.title.includes("九门")) || presetVideos[0] || null;
+    }
+    if (activeChannel === "电影") {
+      return currentChannelFullVideos.find((v) => v.title.includes("阿凡达") || v.title.includes("蜘蛛侠")) || currentChannelFullVideos[0] || null;
+    }
+    if (activeChannel === "动漫") {
+      return currentChannelFullVideos.find((v) => v.title.includes("仙逆") || v.title.includes("吞噬星空")) || currentChannelFullVideos[0] || null;
+    }
+    if (activeChannel === "综艺") {
+      return currentChannelFullVideos.find((v) => v.title.includes("现在就出发") || v.title.includes("密室大逃脱")) || currentChannelFullVideos[0] || null;
+    }
+    return currentChannelFullVideos[0] || null;
+  }, [activeChannel, hasSearched, presetVideos, currentChannelFullVideos]);
+
+  // 网格候选片池 (排除掉顶部已被选为 Banner 的片目，避免上下重复)
+  const gridCandidateVideos = useMemo(() => {
+    if (!channelBannerVideo) return currentChannelFullVideos;
+    return currentChannelFullVideos.filter((v) => v.id !== channelBannerVideo.id);
+  }, [currentChannelFullVideos, channelBannerVideo]);
+
+  // 当前视口展示的视频列表 (支持换一换每批6部切片与查看全部展开)
+  const displayedVideos = useMemo(() => {
+    if (hasSearched && searchResults.length > 0) {
+      return searchResults;
+    }
+
+    const isExpanded = Boolean(channelExpandedMap[activeChannel]);
+    if (isExpanded) {
+      return gridCandidateVideos;
+    }
+
+    // 默认展示 6 部 (3 行 2 列，1:1 对齐 BagTrim 真机截图)
+    const BATCH_SIZE = 6;
+    if (gridCandidateVideos.length <= BATCH_SIZE) {
+      return gridCandidateVideos;
+    }
+
+    const currentBatch = channelPageMap[activeChannel] || 0;
+    const totalBatches = Math.ceil(gridCandidateVideos.length / BATCH_SIZE);
+    const safeBatch = currentBatch % totalBatches;
+    const start = safeBatch * BATCH_SIZE;
+    const slice = gridCandidateVideos.slice(start, start + BATCH_SIZE);
+    if (slice.length < BATCH_SIZE) {
+      return slice.concat(gridCandidateVideos.slice(0, BATCH_SIZE - slice.length));
+    }
+    return slice;
+  }, [hasSearched, searchResults, gridCandidateVideos, channelExpandedMap, channelPageMap, activeChannel]);
+
+  // 换一换操作 (带有平滑旋转动画反馈)
+  const handleRefreshChannelVideos = () => {
+    setIsRefreshing(true);
+    setChannelPageMap((prev) => {
+      const current = prev[activeChannel] || 0;
+      return {
+        ...prev,
+        [activeChannel]: current + 1,
+      };
+    });
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 450);
+  };
+
+  // 查看全部 / 收起精选切换
+  const handleToggleViewAll = () => {
+    setChannelExpandedMap((prev) => ({
+      ...prev,
+      [activeChannel]: !prev[activeChannel],
+    }));
+  };
 
   // 排行榜列表数据
   const rankVideos = useMemo(() => {
@@ -1042,24 +1117,27 @@ export default function App() {
         {/* TAB 1: 首页长流 (Home) */}
         {activeBottomTab === "home" && (
           <div className="home-content-stream">
-            {/* 焦点推荐大卡片 Hero Banner (仅在“首页”频道展示，二级分类如动漫、电视剧等顶格呈现双列海报，完全对齐 BagTrim 交互) */}
-            {activeChannel === "首页" && heroVideo && !hasSearched && (
+            {/* 焦点推荐大卡片 Hero Banner (每个频道均展示该频道的“正在热播”宽幅横条，1:1 对齐真机截图) */}
+            {channelBannerVideo && !hasSearched && (
               <div
                 className="hero-banner-card"
-                onClick={() => selectVideo(heroVideo)}
+                onClick={() => selectVideo(channelBannerVideo)}
               >
                 <img
-                  src={heroVideo.pic}
-                  alt={heroVideo.title}
+                  src={channelBannerVideo.pic}
+                  alt={channelBannerVideo.title}
                   className="hero-banner-img"
                   loading="eager"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=70";
+                  }}
                 />
                 <div className="hero-banner-gradient"></div>
                 <div className="hero-banner-info">
-                  <h2 className="hero-banner-title">{heroVideo.title}</h2>
-                  <div className="hero-banner-play-badge">
-                    <Play size={14} fill="#fff" />
-                    <span>立即播放</span>
+                  <h2 className="hero-banner-title">{channelBannerVideo.title}</h2>
+                  <div className="hero-banner-hot-label">
+                    <span className="hot-label-text">正在热播</span>
                   </div>
                 </div>
               </div>
@@ -1082,7 +1160,7 @@ export default function App() {
             )}
 
             {/* 双列横版网格瀑布流 (2-Column Grid，1:1 对标截图) */}
-            <div className="video-cards-grid">
+            <div className={`video-cards-grid ${isRefreshing ? "is-refreshing-grid" : ""}`}>
               {displayedVideos.map((item) => (
                 <div
                   key={item.id}
@@ -1096,6 +1174,10 @@ export default function App() {
                       alt={item.title}
                       className="poster-img"
                       loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&auto=format&fit=crop&q=60";
+                      }}
                     />
                     {/* 右下角状态药丸 Badge (半透明黑底高斯模糊) */}
                     <div className="poster-status-badge">
@@ -1113,6 +1195,27 @@ export default function App() {
                 </div>
               ))}
             </div>
+
+            {/* 频道底部的【查看全部】与【换一换】双胶囊按键 (1:1 复刻真机截图) */}
+            {!hasSearched && gridCandidateVideos.length > 0 && (
+              <div className="channel-section-footer">
+                <button
+                  className={`channel-action-capsule view-all ${channelExpandedMap[activeChannel] ? "active" : ""}`}
+                  onClick={handleToggleViewAll}
+                >
+                  <LayoutGrid size={16} />
+                  <span>{channelExpandedMap[activeChannel] ? "收起精选" : "查看全部"}</span>
+                </button>
+                <button
+                  className="channel-action-capsule refresh"
+                  onClick={handleRefreshChannelVideos}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw size={16} className={isRefreshing ? "rotating-icon" : ""} />
+                  <span>换一换</span>
+                </button>
+              </div>
+            )}
 
             {/* 底部避让悬浮胶囊的高度垫片 */}
             <div className="dock-spacer"></div>
