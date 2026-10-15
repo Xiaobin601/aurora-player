@@ -58,6 +58,53 @@ const FILTER_REGIONS = ["全部", "内地", "中国香港", "中国台湾", "欧
 const FILTER_YEARS = ["全部", "2026", "2025", "2024", "2023", "2020-2022", "更早"];
 const FILTER_SORTS = ["按热门推荐", "按最新更新", "按评分最高"];
 
+// 辅助工具函数：根据地区精确/模糊匹配片源
+export function matchVideoRegion(v: { area?: string; vodClass?: string }, region: string): boolean {
+  if (!region || region === "全部") return true;
+  const area = `${v.area || ""} ${v.vodClass || ""}`;
+  if (region === "内地") {
+    return ["大陆", "内地", "国产", "普通话"].some((k) => area.includes(k));
+  }
+  if (region === "中国香港") {
+    return area.includes("香港");
+  }
+  if (region === "中国台湾") {
+    return area.includes("台湾");
+  }
+  if (region === "日韩") {
+    return ["日本", "韩国", "日韩"].some((k) => area.includes(k));
+  }
+  if (region === "欧美") {
+    return [
+      "美国", "英国", "法国", "德国", "欧美", "加拿大", "意大利",
+      "西班牙", "俄罗斯", "澳大利亚", "新西兰", "丹麦", "波兰",
+      "瑞典", "荷兰", "比利时", "爱尔兰", "乌克兰", "挪威", "奥地利",
+      "罗马尼亚", "保加利亚", "塞尔维亚", "希腊", "斯洛伐克"
+    ].some((k) => area.includes(k));
+  }
+  return area.includes(region);
+}
+
+// 辅助工具函数：根据年份精确/范围匹配片源
+export function matchVideoYear(v: { year?: string | number; remarks?: string }, year: string): boolean {
+  if (!year || year === "全部") return true;
+  const yStr = String(v.year || "").trim();
+  const yNum = parseInt(yStr, 10);
+  const rem = String(v.remarks || "");
+  if (year === "2026") return yStr.includes("2026") || rem.includes("2026");
+  if (year === "2025") return yStr.includes("2025") || rem.includes("2025");
+  if (year === "2024") return yStr.includes("2024") || rem.includes("2024");
+  if (year === "2023") return yStr.includes("2023") || rem.includes("2023");
+  if (year === "2020-2022") {
+    return (yNum >= 2020 && yNum <= 2022) || ["2020", "2021", "2022"].some((yr) => rem.includes(yr));
+  }
+  if (year === "更早" || year === "2020之前") {
+    return yNum > 1900 && yNum < 2020;
+  }
+  return yStr.includes(year) || rem.includes(year);
+}
+
+
 // 原生形态 B：各二级频道专属影视库细分题材胶囊列表
 const CHANNEL_GENRES_MAP: Record<string, string[]> = {
   "电影": [
@@ -325,6 +372,8 @@ export default function App() {
         pic: v.vodPic,
         subTitle: v.subTitle || (v.vodClass ? v.vodClass.split(",").slice(0, 2).join(" · ") : "超清极速播放"),
         vodClass: v.vodClass || "",
+        area: v.vodArea || "",
+        year: v.vodYear || "",
         sources: realSources,
       };
     });
@@ -371,10 +420,16 @@ export default function App() {
     if (selectedFilterGenre !== "全部") {
       list = list.filter((v) => v.vodClass?.includes(selectedFilterGenre) || v.subTitle?.includes(selectedFilterGenre));
     }
+    if (selectedFilterRegion !== "全部") {
+      list = list.filter((v) => matchVideoRegion(v, selectedFilterRegion));
+    }
+    if (selectedFilterYear !== "全部") {
+      list = list.filter((v) => matchVideoYear(v, selectedFilterYear));
+    }
 
     // 核心去重：严格按照片名唯一性过滤
     const seenTitles = new Set<string>();
-    const deduplicatedList: VideoItem[] = [];
+    let deduplicatedList: VideoItem[] = [];
     for (const item of list) {
       const cleanKey = item.title.trim();
       if (!seenTitles.has(cleanKey)) {
@@ -383,8 +438,22 @@ export default function App() {
       }
     }
 
+    if (selectedFilterSort === "按最新更新") {
+      deduplicatedList = [...deduplicatedList].reverse();
+    } else if (selectedFilterSort === "按评分最高") {
+      deduplicatedList = [...deduplicatedList].sort((a, b) => b.title.localeCompare(a.title));
+    }
+
     return deduplicatedList;
-  }, [presetVideos, activeChannel, selectedFilterCategory, selectedFilterGenre]);
+  }, [
+    presetVideos,
+    activeChannel,
+    selectedFilterCategory,
+    selectedFilterGenre,
+    selectedFilterRegion,
+    selectedFilterYear,
+    selectedFilterSort,
+  ]);
 
   // 各频道的焦点热播横幅 Banner (1:1 像素级复刻真机截图：如电视剧频道的《南部档案》等)
   const channelBannerVideo = useMemo(() => {
@@ -494,42 +563,12 @@ export default function App() {
 
     // 2. 地区筛选
     if (libraryRegion !== "全部") {
-      if (libraryRegion === "内地") {
-        list = list.filter(
-          (v) =>
-            v.vodClass?.includes("内地") ||
-            v.vodClass?.includes("大陆") ||
-            v.vodClass?.includes("国产")
-        );
-      } else {
-        list = list.filter(
-          (v) =>
-            v.vodClass?.includes(libraryRegion) ||
-            v.subTitle?.includes(libraryRegion)
-        );
-      }
+      list = list.filter((v) => matchVideoRegion(v, libraryRegion));
     }
 
     // 3. 年份筛选
     if (libraryYear !== "全部") {
-      if (libraryYear === "2020之前") {
-        list = list.filter(
-          (v) =>
-            !v.remarks?.includes("2026") &&
-            !v.remarks?.includes("2025") &&
-            !v.remarks?.includes("2024") &&
-            !v.remarks?.includes("2023") &&
-            !v.remarks?.includes("2022") &&
-            !v.remarks?.includes("2021")
-        );
-      } else {
-        list = list.filter(
-          (v) =>
-            v.remarks?.includes(libraryYear) ||
-            v.vodClass?.includes(libraryYear) ||
-            v.subTitle?.includes(libraryYear)
-        );
-      }
+      list = list.filter((v) => matchVideoYear(v, libraryYear));
     }
 
     // 4. 排序方式
