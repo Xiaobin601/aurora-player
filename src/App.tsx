@@ -964,6 +964,9 @@ export default function App() {
     setActiveCategoryLibrary(null);
   };
 
+  // 分类片库原生左边缘右滑返回手势引用
+  const libraryTouchRef = useRef<{ startX: number; startY: number } | null>(null);
+
 
 
   // 排行榜列表数据
@@ -2138,7 +2141,30 @@ export default function App() {
         {/* TAB 1: 首页长流 (Home) / 原生形态 B 分类影视全量库 */}
         {activeBottomTab === "home" && (
           activeCategoryLibrary ? (
-            <div className="category-library-view">
+            <div
+              className="category-library-view"
+              onTouchStart={(e) => {
+                if (e.touches.length === 1) {
+                  const touch = e.touches[0];
+                  // 仅当手指从屏幕最左侧 <= 44px 边缘开始触摸时识别为返回手势
+                  if (touch.clientX <= 44) {
+                    libraryTouchRef.current = { startX: touch.clientX, startY: touch.clientY };
+                  }
+                }
+              }}
+              onTouchEnd={(e) => {
+                if (libraryTouchRef.current && e.changedTouches.length > 0) {
+                  const touch = e.changedTouches[0];
+                  const deltaX = touch.clientX - libraryTouchRef.current.startX;
+                  const deltaY = touch.clientY - libraryTouchRef.current.startY;
+                  // 向右滑动超过 48px 且主要为水平位移时触发返回
+                  if (deltaX > 48 && deltaX > Math.abs(deltaY) * 1.2) {
+                    handleCloseCategoryLibrary();
+                  }
+                }
+                libraryTouchRef.current = null;
+              }}
+            >
               {/* 多维横滑筛选项 (Sticky Filter Bar) */}
               <div className="category-filter-chips-section">
                 {/* 题材类型 */}
@@ -2701,10 +2727,8 @@ export default function App() {
         )}
       </main>
 
-      {/* =========================================================
-          4. 悬浮毛玻璃胶囊 Dock TabBar (1:1 像素级复刻截图悬浮岛)
-          ========================================================= */}
-      <nav className="bagtrim-floating-dock">
+      {/* 4. 悬浮毛玻璃胶囊 Dock TabBar (推入二级全屏子页面时平滑隐去) */}
+      <nav className={`bagtrim-floating-dock ${activeCategoryLibrary ? "hidden-by-subpage" : ""}`}>
         <div className="dock-inner-capsule">
           {/* 首页 Tab (选中时带独特的浅色半透明圆角底色背板) */}
           <button
