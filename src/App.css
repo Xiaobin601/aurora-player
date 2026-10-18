@@ -231,6 +231,9 @@ body {
   height: 100%;
   object-fit: cover;
   transition: transform 0.4s ease;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
 }
 
 .hero-banner-card:active .hero-banner-img {
@@ -342,6 +345,9 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
 }
 
 /* 右下角状态药丸 Badge (半透明黑底高斯模糊) */
@@ -458,36 +464,40 @@ body {
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.25s ease-out;
+  padding-bottom: calc(90px + env(safe-area-inset-bottom, 24px));
 }
 
-/* 顶部沉浸导航栏 */
+/* 顶部沉浸导航栏 (严格适配 iPhone 刘海与状态栏 Safe Area) */
 .category-library-header {
   position: sticky;
   top: 0;
   z-index: 50;
-  height: 52px;
-  background: rgba(10, 11, 14, 0.92);
+  box-sizing: border-box;
+  background: rgba(10, 11, 14, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 8px 16px 12px 16px;
+  padding-top: max(16px, calc(env(safe-area-inset-top, 0px) + 6px));
+  min-height: calc(54px + env(safe-area-inset-top, 0px));
 }
 
 .library-back-btn {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   background: transparent;
   border: none;
   color: #ffffff;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 4px 6px 0;
+  padding: 6px 10px 6px 0;
   transition: opacity 0.2s;
+  min-height: 44px;
 }
 
 .library-back-btn:hover {
@@ -1278,7 +1288,7 @@ body {
   }
 }
 
-/* 顶部吸顶 16:9 播放视口 */
+/* 顶部吸顶 16:9 播放视口 (自动避开 iPhone 刘海安全区) */
 .player-sticky-viewport {
   position: sticky;
   top: 0;
@@ -1289,6 +1299,7 @@ body {
   flex-shrink: 0;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  margin-top: env(safe-area-inset-top, 0px);
 }
 
 .player-sticky-viewport video {
@@ -1297,54 +1308,127 @@ body {
   object-fit: contain;
 }
 
-/* 浮动圆形返回按键 (左上角半透明圆形箭头) */
+/* 浮动返回按键 (1:1 复刻原版纯白极细尖折线箭标，去除大黑圆底) */
 .bagtrim-floating-back-btn {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 14px;
+  left: 14px;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent !important;
+  border: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 35;
-  transition: transform 0.15s ease, background 0.15s ease;
+  z-index: 45;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.7));
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  touch-action: manipulation;
+  padding: 0;
+}
+
+.bagtrim-floating-back-btn::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  right: -12px;
+  bottom: -12px;
 }
 
 .bagtrim-floating-back-btn:active {
-  transform: scale(0.92);
-  background: rgba(255, 255, 255, 0.25);
+  transform: scale(0.88);
+  opacity: 0.7;
 }
 
-/* 浮动全屏按键 (右上角) */
-.bagtrim-floating-fullscreen-btn {
+/* 右上角快捷动作区 (画中画 + 横屏全屏) */
+.bagtrim-floating-top-right {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 45;
+}
+
+/* 浮动画中画按键 */
+.bagtrim-floating-pip-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 35;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+  touch-action: manipulation;
+}
+
+.bagtrim-floating-pip-btn::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+}
+
+.bagtrim-floating-pip-btn.active {
+  background: #38bdf8;
+  color: #000000;
+  border-color: #38bdf8;
+}
+
+.bagtrim-floating-pip-btn:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* 浮动全屏按键 (右上角，扩大热区并增强触控) */
+.bagtrim-floating-fullscreen-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   transition: transform 0.15s ease, background 0.15s ease;
+  touch-action: manipulation;
+}
+
+.bagtrim-floating-fullscreen-btn::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
 }
 
 .bagtrim-floating-fullscreen-btn:active {
   transform: scale(0.92);
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.28);
 }
 
 /* 详情页滚动内容主体 */
@@ -1415,19 +1499,38 @@ body {
   padding: 3px 8px;
   border-radius: 9999px;
   border: 1px solid rgba(56, 189, 248, 0.2);
+  transition: all 0.2s ease;
 }
 
-/* 影视大标题 */
+.sub-tabs-right .live-status-pill.loading {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.sub-tabs-right .live-status-pill.playing {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.sub-tabs-right .live-status-pill.error {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* 影视大标题 (1:1 复刻原版 22px 加粗) */
 .bagtrim-vod-title {
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.3px;
-  margin: 0;
+  margin: 0 0 8px 0;
   line-height: 1.3;
 }
 
-/* 属性胶囊药丸行：[📅 2026] [🔥 172] [国产] [电视剧] */
+/* 属性胶囊药丸行：[📅 2026] [🔥 771] [冒险] [悬疑] */
 .bagtrim-meta-pills-row {
   display: flex;
   align-items: center;
@@ -1442,9 +1545,14 @@ body {
   padding: 4px 9px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.95);
   font-size: 12px;
   font-weight: 500;
+}
+
+.meta-pill .pill-val-bold {
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .meta-pill .pill-icon {
@@ -1455,39 +1563,56 @@ body {
   color: #ff6b6b;
 }
 
-/* 三大金刚按键 (喜欢、下载、收藏) */
+/* 三大金刚按键 (1:1 复刻原版垂直三等分结构: 喜欢、下载、收藏) */
 .bagtrim-action-trio {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 2px;
+  gap: 16px;
+  margin-top: 6px;
+  padding: 4px 0;
 }
 
 .action-trio-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 9px 0;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 4px;
+  padding: 6px 0;
+  border-radius: 8px;
+  background: transparent !important;
+  border: none !important;
   color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  touch-action: manipulation;
+}
+
+.action-trio-btn .action-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-trio-btn .action-btn-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: -0.2px;
 }
 
 .action-trio-btn:active {
-  background: rgba(255, 255, 255, 0.14);
-  transform: scale(0.97);
+  transform: scale(0.9);
+  opacity: 0.75;
 }
 
-.action-trio-btn.active {
+.action-trio-btn.active .action-btn-label {
   color: #ff4757;
-  border-color: rgba(255, 71, 87, 0.3);
-  background: rgba(255, 71, 87, 0.1);
+}
+
+.action-trio-btn.collected .action-btn-label {
+  color: #ffa502;
 }
 
 /* 选集与线路模块 */
@@ -1601,40 +1726,223 @@ body {
   font-weight: 700;
 }
 
-/* 1:1 复刻 BagTrim 原生圆角正方形纯数字选集网格 */
+/* 1:1 复刻 BagTrim 原生圆角选集网格 (固定高度避免退出全屏时视口拉伸变大) */
 .bagtrim-square-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  gap: 8px;
+  width: 100%;
 }
 
 .square-ep-btn {
-  aspect-ratio: 1 / 1;
+  height: 46px;
+  max-height: 46px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.9);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
 }
 
 .square-ep-btn:active {
   transform: scale(0.94);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* 选中的当前集数：纯白底加粗大黑字！1:1 复刻截图 */
 .square-ep-btn.active {
   background: #ffffff !important;
   color: #000000 !important;
-  font-size: 19px !important;
+  font-size: 16px !important;
   font-weight: 800 !important;
   border-color: #ffffff !important;
   box-shadow: 0 4px 14px rgba(255, 255, 255, 0.35);
+}
+
+/* =========================================================
+   全屏模式专属右侧滑出选集抽屉
+   ========================================================= */
+.fullscreen-ep-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(340px, 78vw);
+  background: rgba(12, 12, 16, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 2100;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 20px;
+  gap: 12px;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.7);
+}
+
+.fullscreen-ep-drawer.open {
+  transform: translateX(0);
+}
+
+.fullscreen-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.drawer-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.drawer-title-group .drawer-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.drawer-title-group .drawer-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.drawer-close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.drawer-close-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 抽屉内线路切换 */
+.fullscreen-drawer-sources {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.fullscreen-drawer-sources::-webkit-scrollbar {
+  display: none;
+}
+
+.drawer-source-chip {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.drawer-source-chip.active {
+  background: #38bdf8;
+  color: #000000;
+  border-color: #38bdf8;
+  font-weight: 800;
+}
+
+/* 抽屉内分页器 */
+.fullscreen-drawer-pagers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.fullscreen-drawer-pagers::-webkit-scrollbar {
+  display: none;
+}
+
+.drawer-pager-chip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.drawer-pager-chip.active {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* 抽屉内剧集网格 (4列) */
+.fullscreen-drawer-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding-right: 2px;
+}
+
+.drawer-ep-btn {
+  height: 42px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.drawer-ep-btn.active {
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.35);
+}
+
+.ep-playing-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
 }
 
 /* 猜你喜欢模块 */
@@ -1765,7 +2073,7 @@ body {
 /* =========================================================
    横屏全屏沉浸播放样式 (沉浸覆盖，隐藏所有系统杂质)
    ========================================================= */
-.player-modal-overlay.is-landscape-fullscreen {
+.bagtrim-player-page.is-landscape-fullscreen {
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
@@ -1775,18 +2083,44 @@ body {
   background: #000 !important;
   padding: 0 !important;
   margin: 0 !important;
+  overflow: hidden !important;
 }
 
-.player-modal-overlay.is-landscape-fullscreen .player-modal-window {
-  max-width: none !important;
-  max-height: none !important;
-  border-radius: 0 !important;
-}
-
-.player-modal-overlay.is-landscape-fullscreen .video-container {
+.bagtrim-player-page.is-landscape-fullscreen .player-sticky-viewport {
   width: 100% !important;
   height: 100% !important;
+  height: 100dvh !important;
+  max-height: 100% !important;
   aspect-ratio: auto !important;
+  margin-top: 0 !important;
+  position: relative !important;
+}
+
+.bagtrim-player-page.is-landscape-fullscreen .player-sticky-viewport video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* 物理横屏响应式适配：确保直接横屏时视口撑满全屏且底部控件不被溢出裁切 */
+@media (orientation: landscape) {
+  .bagtrim-player-page {
+    overflow: hidden !important;
+  }
+  .bagtrim-player-page .player-sticky-viewport {
+    width: 100% !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    max-height: 100% !important;
+    aspect-ratio: auto !important;
+    margin-top: 0 !important;
+    position: relative !important;
+  }
+  .bagtrim-player-page .player-sticky-viewport video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
 }
 
 /* 旋转支持 */
@@ -1798,164 +2132,302 @@ body {
     height: 100vh;
   }
 
-  .player-modal-overlay.is-landscape-fullscreen {
+  .bagtrim-player-page.is-landscape-fullscreen {
     transform: rotate(90deg);
     transform-origin: center center;
     width: 100vh !important;
     height: 100vw !important;
-    top: calc((100vh - 100vw) / 2);
-    left: calc((100vw - 100vh) / 2);
+    inset: auto !important;
+    top: calc((100vh - 100vw) / 2) !important;
+    left: calc((100vw - 100vh) / 2) !important;
   }
 
-  .player-modal-overlay.is-landscape-fullscreen.rotate-270 {
+  .bagtrim-player-page.is-landscape-fullscreen.rotate-270 {
     transform: rotate(270deg);
   }
 }
 
-/* 现代全屏控制浮层 */
-.modern-player-top {
+/* =========================================================
+   iOS 原生风格全屏播放控制层 (1:1 复刻用户图2标准原生形态)
+   ========================================================= */
+/* 顶部控制栏 (左上角: ✕ + 画中画; 右上角: 细音量条 + 喇叭) */
+.ios-landscape-top {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 60px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 max(24px, env(safe-area-inset-right)) 0 max(24px, env(safe-area-inset-left));
   padding-top: max(8px, env(safe-area-inset-top));
-  z-index: 50;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 100%);
+  z-index: 60;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: auto;
 }
 
-.modern-player-top.hidden {
+.ios-landscape-top.hidden {
   opacity: 0;
   transform: translateY(-100%);
   pointer-events: none;
 }
 
-.top-left-group {
+.ios-top-left-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.ios-top-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.ios-top-btn:active {
+  transform: scale(0.9);
+  opacity: 0.7;
+}
+
+.ios-top-btn.pip-btn.active {
+  color: #38bdf8;
+}
+
+.ios-top-right-group {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.modern-icon-btn {
+/* 顶部右上角 iOS 原生细胶囊音量条 */
+.ios-volume-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ios-volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 90px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.ios-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.ios-icon-btn.volume-btn {
   background: transparent;
   border: none;
-  color: #fff;
-  cursor: pointer;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 0;
+  cursor: pointer;
 }
 
-.modern-title-group {
+/* 屏幕正中心三大控制键: ↺10秒快退 | ▶/❚❚大播放 | ↻10秒快进 */
+.ios-landscape-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: clamp(40px, 8vw, 84px);
+  z-index: 60;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: auto;
 }
 
-.modern-video-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #fff;
+.ios-landscape-center.hidden {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.92);
+  pointer-events: none;
 }
 
-.modern-source-badge {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(59, 130, 246, 0.25);
-  color: #60a5fa;
-}
-
-.top-right-group {
+.ios-center-seek-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  padding: 0;
 }
 
-.btn-hint-text {
-  font-size: 11px;
-  margin-left: 4px;
+.ios-center-seek-btn:active {
+  transform: scale(0.88);
+  opacity: 0.7;
 }
 
-.modern-player-bottom {
+.ios-center-play-btn {
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, background 0.15s ease;
+  padding: 0;
+}
+
+.ios-center-play-btn:active {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* 底部横贯通栏进度条与时间 (带倍速表盘与选集更多按键) */
+.ios-landscape-bottom {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 16px 24px;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+  padding: 0 max(24px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  z-index: 50;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  gap: 6px;
+  z-index: 60;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: auto;
 }
 
-.modern-player-bottom.hidden {
+.ios-landscape-bottom.hidden {
   opacity: 0;
   transform: translateY(100%);
   pointer-events: none;
 }
 
-.modern-progress-bar-wrap {
+/* 细长通栏进度条 */
+.ios-progress-track {
+  position: relative;
+  width: 100%;
+  height: 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.modern-time-text {
-  font-size: 12px;
-  font-family: monospace;
-  color: #fff;
-  min-width: 44px;
-}
-
-.modern-progress-slider {
-  flex: 1;
-  height: 4px;
-  accent-color: #3b82f6;
   cursor: pointer;
 }
 
-.modern-controls-row {
+.ios-progress-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 1.5px;
+}
+
+.ios-progress-fill {
+  position: absolute;
+  left: 0;
+  height: 3px;
+  background: #ffffff;
+  border-radius: 1.5px;
+  pointer-events: none;
+}
+
+.ios-progress-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* 进度条下方栏：当前时间 | 倍速+选集操作 | 剩余倒计时 */
+.ios-bottom-subrow {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  padding-top: 2px;
 }
 
-.left-controls {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.btn-sec-text {
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.right-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.modern-rate-btn {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border-radius: 14px;
-  padding: 4px 10px;
-  font-size: 12px;
+.ios-time-text {
+  font-size: 13px;
   font-weight: 600;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  letter-spacing: -0.2px;
+}
+
+.ios-bottom-tools {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.ios-tool-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
   cursor: pointer;
+  position: relative;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.ios-tool-btn:active {
+  transform: scale(0.9);
+  opacity: 0.7;
+}
+
+.ios-tool-btn .rate-pill {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  font-size: 10px;
+  font-weight: 800;
+  background: #38bdf8;
+  color: #000000;
+  padding: 1px 4px;
+  border-radius: 8px;
 }
 
 /* =========================================================
@@ -2349,3 +2821,1242 @@ body {
   color: var(--text-gray);
   font-size: 13px;
 }
+
+/* =========================================================
+   7. 阶段二：追剧收藏与更新提醒动效与抽屉
+   ========================================================= */
+
+/* 心形弹跳放大动效 */
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.38) rotate(-8deg); }
+  65% { transform: scale(0.92) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.action-trio-btn.heart-active svg {
+  animation: heartPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.action-trio-btn.collected {
+  color: #ffa502 !important;
+  border-color: rgba(255, 165, 2, 0.4) !important;
+  background: rgba(255, 165, 2, 0.12) !important;
+}
+
+/* 全局毛玻璃浮动 Toast 提示胶囊 */
+.aurora-floating-toast {
+  position: fixed;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 24, 33, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.1);
+  z-index: 9999;
+  animation: toastFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+@keyframes toastFadeIn {
+  from { opacity: 0; transform: translate(-50%, -12px) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+/* 追剧抽屉列表项 */
+.favorite-item-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.favorite-item-row:active {
+  background: rgba(255, 255, 255, 0.07);
+  transform: scale(0.99);
+}
+
+.favorite-poster-wrap {
+  position: relative;
+  width: 68px;
+  height: 96px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #2a2b36;
+}
+
+.favorite-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 新剧集更新红点 & 角标 */
+.favorite-update-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: linear-gradient(135deg, #ef4444, #f43f5e);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+.red-dot-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+  margin-left: 4px;
+  animation: pulseDot 1.6s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.favorite-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.favorite-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.favorite-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.favorite-ep-info {
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.favorite-progress-pill {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  font-size: 11px;
+}
+
+.favorite-remove-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.favorite-remove-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* =========================================================
+   8. 阶段三：AirPlay 投屏、画面比例与屏幕锁
+   ========================================================= */
+
+/* 画幅比例切换样式 */
+.player-viewport-video.aspect-contain {
+  object-fit: contain !important;
+}
+
+.player-viewport-video.aspect-fill {
+  object-fit: fill !important;
+}
+
+.player-viewport-video.aspect-cover {
+  object-fit: cover !important;
+}
+
+/* 画面比例与操作 HUD 胶囊 */
+.aspect-ratio-hud {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 24px;
+  border-radius: 24px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1500;
+  pointer-events: none;
+  animation: hudScale 0.2s ease-out;
+}
+
+@keyframes hudScale {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* 屏幕锁防误触浮动按键 (横屏左侧悬浮) */
+.screen-lock-floating-btn {
+  position: absolute;
+  left: max(24px, env(safe-area-inset-left, 24px));
+  top: 50%;
+  transform: translateY(-50%) scale(0.85);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1800;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.screen-lock-floating-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) scale(1);
+}
+
+.screen-lock-floating-btn.visible:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.screen-lock-floating-btn.locked {
+  background: rgba(239, 68, 68, 0.35);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #fca5a5;
+}
+
+/* 锁定状态时的触控拦截全屏蒙层 */
+.screen-lock-overlay-blocker {
+  position: absolute;
+  inset: 0;
+  z-index: 1750;
+  background: transparent;
+  cursor: default;
+}
+
+/* 电视投屏 AirPlay 引导弹窗 */
+.airplay-modal-content {
+  background: #1e212b;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  animation: slideUp 0.2s ease-out;
+}
+
+.airplay-searching-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.1);
+  border: 2px solid #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px auto;
+  position: relative;
+  animation: radarWave 2s infinite ease-out;
+}
+
+@keyframes radarWave {
+  0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.6); }
+  70% { box-shadow: 0 0 0 20px rgba(56, 189, 248, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+}
+
+.airplay-guide-text {
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.airplay-url-box {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #38bdf8;
+  word-break: break-all;
+  user-select: all;
+  border: 1px dashed rgba(56, 189, 248, 0.3);
+}
+
+/* =========================================================
+   9. 阶段四与阶段五：下载管理与自定义多源管理
+   ========================================================= */
+
+.download-task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.download-task-poster {
+  width: 52px;
+  height: 72px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #252836;
+}
+
+.download-task-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.download-task-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.download-task-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.download-speed-tag {
+  color: #38bdf8;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.download-action-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 8px;
+}
+
+.source-meta-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.source-name-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-ping-pill {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.source-ping-pill.fast {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.source-ping-pill.slow {
+  background: rgba(234, 179, 8, 0.2);
+  color: #facc15;
+}
+
+.source-api-url {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.source-tools-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.source-tool-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.source-tool-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.source-tool-action-btn.primary {
+  background: #3b82f6;
+  border-color: #60a5fa;
+}
+
+/* =========================================================
+   阶段一 1.6：边缘右滑返回手势与中央 Seek 隔离 HUD
+   ========================================================= */
+
+/* iPhone 边缘向右滑动返回的半透明胶囊反馈 */
+.edge-swipe-back-pill {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-left: none;
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+  padding: 10px 14px 10px 10px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 2100;
+  pointer-events: none;
+  box-shadow: 2px 4px 16px rgba(0, 0, 0, 0.5);
+  transition: opacity 0.1s ease;
+}
+
+/* 屏幕中央 Seek 快进/快退手势 HUD (与边缘返回严格隔离) */
+.seek-gesture-hud {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 14px 22px;
+  border-radius: 20px;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 1600;
+  pointer-events: none;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+  animation: hudScale 0.15s ease-out;
+}
+
+.seek-time-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.seek-target-time {
+  font-size: 20px;
+  font-weight: 700;
+  color: #38bdf8;
+  font-variant-numeric: tabular-nums;
+}
+
+.seek-divider {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.seek-total-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+
+.seek-diff-chip {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.seek-diff-chip.forward {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+
+.seek-diff-chip.backward {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+}
+
+/* =========================================================
+   阶段一：亮度调节、音量手势与长按 2.0x 倍速组件样式
+   ========================================================= */
+
+/* 全屏亮度滤镜/暗色遮罩 */
+.brightness-filter-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000000;
+  pointer-events: none;
+  z-index: 1550;
+  transition: opacity 0.05s linear;
+}
+
+/* 垂直手势 HUD (亮度 & 音量) 极简磨砂胶囊 */
+.brightness-gesture-hud,
+.volume-gesture-hud {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 28px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 1650;
+  pointer-events: none;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.6);
+  animation: hudScale 0.15s ease-out;
+  width: 52px;
+}
+
+.brightness-gesture-hud {
+  left: 28px;
+}
+
+.volume-gesture-hud {
+  right: 28px;
+}
+
+.brightness-gesture-hud .hud-icon {
+  color: #fbbf24;
+}
+
+.volume-gesture-hud .hud-icon {
+  color: #38bdf8;
+}
+
+.hud-bar-track {
+  width: 6px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.hud-bar-fill {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 3px;
+  transition: height 0.05s linear;
+}
+
+.brightness-gesture-hud .hud-bar-fill {
+  background: linear-gradient(to top, #f59e0b, #fef08a);
+}
+
+.volume-gesture-hud .hud-bar-fill {
+  background: linear-gradient(to top, #3b82f6, #67e8f9);
+}
+
+.hud-pct-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 顶部拟态长按 2.0x 药丸徽章 */
+.longpress-2x-badge {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.25);
+  border-radius: 20px;
+  padding: 6px 14px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  z-index: 1700;
+  pointer-events: none;
+  animation: badgeSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.longpress-2x-badge .badge-pulse-icon {
+  color: #38bdf8;
+  font-size: 11px;
+  letter-spacing: -1px;
+  animation: pulseBlink 0.6s infinite alternate;
+}
+
+@keyframes badgeSlideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes pulseBlink {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* =========================================================
+   【1:1 复刻截图 1】竖屏视口极简浮层 & 详情五大按键 & 简介
+   ========================================================= */
+
+.portrait-viewport-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 14px;
+  z-index: 1500;
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.portrait-viewport-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.portrait-viewport-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.portrait-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.portrait-back-btn,
+.portrait-cast-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  -webkit-tap-highlight-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.portrait-bottom-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%);
+  padding: 12px 4px 6px;
+  border-radius: 0 0 12px 12px;
+}
+
+.portrait-play-btn,
+.portrait-fullscreen-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.portrait-time-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+}
+
+.portrait-progress-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 2px;
+  position: relative;
+  margin: 0 4px;
+}
+
+.portrait-progress-fill {
+  height: 100%;
+  background: #ffffff;
+  border-radius: 2px;
+}
+
+.portrait-progress-range {
+  position: absolute;
+  inset: -10px 0;
+  width: 100%;
+  height: 23px;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* 竖屏大标题行与简介按键 */
+.bagtrim-vod-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.bagtrim-vod-title-row .bagtrim-vod-title {
+  margin-bottom: 0;
+}
+
+.vod-intro-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s ease;
+}
+
+.vod-intro-btn:hover {
+  color: #ffffff;
+}
+
+/* 竖屏五大功能按键行 */
+.bagtrim-action-five-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin: 16px 0 20px;
+  padding: 0 2px;
+}
+
+.action-five-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 4px 0;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.action-five-btn:active {
+  transform: scale(0.94);
+  color: #ffffff;
+}
+
+.action-five-btn .action-btn-icon {
+  color: inherit;
+}
+
+.action-five-btn .action-btn-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: inherit;
+  letter-spacing: 0.2px;
+}
+
+/* 选集副头部查看全部按键 */
+.bagtrim-all-eps-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  padding: 2px 0;
+  transition: color 0.15s ease;
+}
+
+.bagtrim-all-eps-btn:hover {
+  color: #ffffff;
+}
+
+/* 剧集简介弹层 */
+.intro-sheet {
+  max-height: 65vh;
+}
+
+.intro-meta-tags {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.intro-tag {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.intro-full-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0;
+}
+
+/* =========================================================
+   【1:1 复刻截图 2】横屏全屏拟态状态条 & 底部控制台 & 气泡
+   ========================================================= */
+
+/* 极顶拟态系统状态栏 (WIFI 00:54 80% 🔋) */
+.ios-landscape-statusbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  padding: 4px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1600;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-landscape-statusbar.visible {
+  opacity: 1;
+}
+
+.ios-landscape-statusbar.hidden {
+  opacity: 0;
+}
+
+.statusbar-wifi-label {
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.statusbar-time-text {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statusbar-battery-pct {
+  font-size: 11px;
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.statusbar-battery-pill {
+  width: 20px;
+  height: 10px;
+  border: 1.2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 3px;
+  padding: 1px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.statusbar-battery-pill::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 2px;
+  width: 2px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 0 1px 1px 0;
+}
+
+.battery-fill {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 1px;
+}
+
+/* 顶部控制栏 */
+.ios-landscape-top-header {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  right: 0;
+  height: 48px;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1600;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-landscape-top-header.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ios-landscape-top-header.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ios-top-left-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ios-top-title-text {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+.ios-top-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* 底部通栏控制台 */
+.ios-landscape-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 28px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.6) 65%, transparent 100%);
+  z-index: 1600;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-landscape-bottom-bar.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ios-landscape-bottom-bar.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ios-bottom-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.ios-time-compact {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  min-width: 96px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+}
+
+.ios-time-compact .time-sep {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.ios-time-compact .time-dur {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.ios-bottom-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.ios-bottom-left-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.ios-action-icon-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: transform 0.1s ease;
+}
+
+.ios-action-icon-btn:active {
+  transform: scale(0.9);
+}
+
+.ios-action-danmaku-btn {
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  background: transparent;
+  border-radius: 6px;
+  padding: 1px 7px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ios-action-danmaku-btn.active {
+  border-color: #22c55e;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.ios-bottom-right-group {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.ios-text-action-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 2px;
+  transition: color 0.15s ease;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.ios-text-action-btn:hover {
+  color: #38bdf8;
+}
+
+.ios-text-action-btn.active {
+  color: #38bdf8;
+}
+
+.ios-text-action-btn.highlight {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+/* 横屏浮动气泡选择面板 (倍速 & 播放源) */
+.landscape-popover {
+  position: absolute;
+  bottom: 74px;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 14px 16px;
+  z-index: 1800;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+  animation: hudScale 0.15s ease-out;
+}
+
+.rate-popover {
+  right: 80px;
+  width: 220px;
+}
+
+.source-popover {
+  right: 28px;
+  width: 240px;
+}
+
+.popover-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 10px;
+}
+
+.popover-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.popover-chip {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.popover-chip.active {
+  background: #38bdf8;
+  color: #000000;
+  font-weight: 700;
+}
+
+

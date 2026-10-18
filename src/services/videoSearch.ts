@@ -63,6 +63,38 @@ function normalizeMediaUrl(url: string): string {
   }
 }
 
+/**
+ * 动态嗅探并升级封面 URL 为超高清母版规格 (解决 Retina @3x 视网膜屏模糊问题)
+ */
+export function getHighDefinitionPoster(url: string): string {
+  if (!url || typeof url !== "string") return url || "";
+  let u = url.trim();
+
+  // 1. 腾讯视频封面 (puui.qpic.cn): /260 属于低清缩略，替换为 /498 或 /1280 超高清母版
+  if (u.includes("puui.qpic.cn") || u.includes("vcover_vt_pic") || u.includes("vcover-vt-pic")) {
+    u = u.replace(/\/(260|300|330|360)(\?.*)?$/, "/498$2");
+    u = u.replace(/\/260$/, "/498");
+  }
+
+  // 2. 优酷/阿里 OSS CDN (ykimg.com): 剔除缩略与压缩参数，拉取 1080P/4K 原画
+  if (u.includes("ykimg.com")) {
+    u = u.replace(/\?x-oss-process=image\/resize,.*$/i, "");
+    u = u.replace(/\?x-oss-process=.*$/i, "");
+  }
+
+  // 3. 爱奇艺封面 (qiyipic.com): 替换 _180_236 等规格为 _480_640 或原图
+  if (u.includes("qiyipic.com")) {
+    u = u.replace(/_\d+_\d+\.(jpg|png|webp)/i, "_480_640.$1");
+  }
+
+  // 4. 芒果 TV / 搜狐封面
+  if (u.includes("mgtv.com") || u.includes("sohu.com")) {
+    u = u.replace(/!.*$/i, "");
+  }
+
+  return u;
+}
+
 export function cleanTitle(raw: string): string {
   let t = (raw || "").trim();
   if (!t) return "未命名影片";

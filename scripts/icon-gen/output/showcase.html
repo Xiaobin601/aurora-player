@@ -1,0 +1,145 @@
+
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", sans-serif; }
+          body {
+            width: 1920px;
+            height: 1080px;
+            background: #090b10;
+            color: #ffffff;
+            padding: 60px 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+          .header-box {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 24px;
+          }
+          .title {
+            font-size: 38px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #ffffff 0%, #38bdf8 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+          }
+          .subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 6px;
+          }
+          .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 36px;
+            margin: 40px 0;
+          }
+          .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+          }
+          .icon-preview-box {
+            width: 240px;
+            height: 240px;
+            border-radius: 54px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            margin-bottom: 24px;
+          }
+          .icon-preview-box img {
+            width: 100%;
+            height: 100%;
+            display: block;
+          }
+          .badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+          }
+          .card-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #ffffff;
+          }
+          .card-desc {
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.55);
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header-box">
+          <div>
+            <div class="title">极光影院 (Aurora Player) App 图标设计提案</div>
+            <div class="subtitle">针对 iOS 18 原生美学定制：1024×1024 超高分辨率、微质感光影与沉浸式影视符号</div>
+          </div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.4);">
+            设计规范：Apple HIG App Icon Specification (1024x1024)
+          </div>
+        </div>
+
+        <div class="cards-grid">
+          
+            <div class="card">
+              <div class="icon-preview-box">
+                <img src="design_a_aurora_stream.png" />
+              </div>
+              <div class="badge">方案 A_AURORA_STREAM</div>
+              <div class="card-name">极光光耀播放器 (Aurora Stream Prism)</div>
+              <div class="card-desc">深邃黑曜夜空背景上，绚丽流动的北极光（翡翠绿、极光青与紫罗兰）环绕交织，正中心浮现圆润纯白毛玻璃质感的立体播放三棱镜，科技感与流动光影兼具。</div>
+            </div>
+          
+            <div class="card">
+              <div class="icon-preview-box">
+                <img src="design_b_cinema_lens.png" />
+              </div>
+              <div class="badge">方案 B_CINEMA_LENS</div>
+              <div class="card-name">极光天穹视镜 (Aurora Cinema Aperture)</div>
+              <div class="card-desc">极致纯粹的电影镜头光阑（Aperture）与极光光圈碰撞，深空蓝黑底衬托出细腻的镜头镀膜反光与同心光环，象征探索无限视界的私人家庭影院。</div>
+            </div>
+          
+            <div class="card">
+              <div class="icon-preview-box">
+                <img src="design_c_modern_minimal.png" />
+              </div>
+              <div class="badge">方案 C_MODERN_MINIMAL</div>
+              <div class="card-name">极致双弧“极”字印记 (Infinite Aurora Pulse)</div>
+              <div class="card-desc">将极光的 A 与无限符号（∞）解构为两条环环相扣的高光渐变纽带，内嵌纯白圆润播放核心，契合 Apple Design Awards 典范风格，在大道至简中释放无尽生机。</div>
+            </div>
+          
+            <div class="card">
+              <div class="icon-preview-box">
+                <img src="design_d_aurora_badge.png" />
+              </div>
+              <div class="badge">方案 D_AURORA_BADGE</div>
+              <div class="card-name">黄金罗盘光影徽章 (Golden Aurora Luminary)</div>
+              <div class="card-desc">将极光暖金与青翠翡翠融为一体，采用极富质感的微浮雕与光影切面，呈现高贵而典雅的沉浸式顶级影视殿堂气息，在浅色/深色桌面上识别度极高。</div>
+            </div>
+          
+        </div>
+
+        <div style="text-align: center; color: rgba(255,255,255,0.4); font-size: 13px;">
+          选中您心仪的设计方案后，将直接自动替换 iOS Xcode 工程并重新编译安装到您的 iPhone
+        </div>
+      </body>
+    </html>
+  

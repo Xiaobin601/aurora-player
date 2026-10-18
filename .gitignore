@@ -23,3 +23,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Test screenshots
+tests/screenshots/
+tests/*.json
+
+# iOS Build artifacts
+ios/TempTest/dist/
+*.xcuserstate
+xcuserdata/
+DerivedData/
